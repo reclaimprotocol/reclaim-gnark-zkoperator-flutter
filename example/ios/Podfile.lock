@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - gnarkprover (0.1.0):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - gnarkprover (from `.symlinks/plugins/gnarkprover/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  gnarkprover:
+    :path: ".symlinks/plugins/gnarkprover/ios"
+
+SPEC CHECKSUMS:
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  gnarkprover: 22bfc2d92367534c43d87db54a9d1c7c2c5d4a0b
+
+PODFILE CHECKSUM: 7be2f5f74864d463a8ad433546ed1de7e0f29aef
+
+COCOAPODS: 1.15.2
