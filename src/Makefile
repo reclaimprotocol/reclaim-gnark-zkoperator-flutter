@@ -29,7 +29,7 @@ $(shell mkdir -p $(BUILD_DIR))
 # 2 versions of proof libraries exist.
 # 1. Embedded circuits (by default) which makes ~95mb files but requires less memory.
 # 2. Compiles circuits on the fly but weights ~58 mb. Set variable 'USE_LIB_COMPILED' with any string to enable this mode.
-GOX_TAGS=""
+GOX_TAGS=
 ifdef USE_LIB_COMPILED
 GOX_TAGS="-tags=compiled"
 $(info "Building libraries which compiles circuits on the fly. Unset 'USE_LIB_COMPILED' to use embedded circuits.")
