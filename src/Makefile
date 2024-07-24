@@ -24,6 +24,19 @@ GO_TARGET_LIB:=$(GO_GNARKPROVER_DIR)/libprove.go
 $(shell mkdir -p $(BUILD_DIR))
 # end init
 
+# Go compiler tags
+
+# 2 versions of proof libraries exist.
+# 1. Embedded circuits (by default) which makes ~95mb files but requires less memory.
+# 2. Compiles circuits on the fly but weights ~58 mb. Set variable 'USE_LIB_COMPILED' with any string to enable this mode.
+GOX_TAGS=""
+ifdef USE_LIB_COMPILED
+GOX_TAGS="-tags=compiled"
+$(info "Building libraries which compiles circuits on the fly. Unset 'USE_LIB_COMPILED' to use embedded circuits.")
+else
+$(info "Building libraries with embedded circuits. Set 'USE_LIB_COMPILED' to build libraries that compiles circuits on the fly.")
+endif
+
 android-armv7a:
 	CGO_ENABLED=1 \
 	GOOS=android \
@@ -31,7 +44,7 @@ android-armv7a:
 	GOARM=7 \
 	CC=$(NDK_BIN)/armv7a-linux-androideabi21-clang \
 	CXX=$(NDK_BIN)/armv7a-linux-androideabi21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} -buildmode=c-shared -o $(ANDROID_OUT)/armeabi-v7a/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -buildmode=c-shared -o $(ANDROID_OUT)/armeabi-v7a/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 android-arm64:
 	CGO_ENABLED=1 \
@@ -39,7 +52,7 @@ android-arm64:
 	GOARCH=arm64 \
 	CC=$(NDK_BIN)/aarch64-linux-android21-clang \
 	CXX=$(NDK_BIN)/aarch64-linux-android21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} -buildmode=c-shared -o $(ANDROID_OUT)/arm64-v8a/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -buildmode=c-shared -o $(ANDROID_OUT)/arm64-v8a/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 android-x86:
 	CGO_ENABLED=1 \
@@ -47,7 +60,7 @@ android-x86:
 	GOARCH=386 \
 	CC=$(NDK_BIN)/i686-linux-android21-clang \
 	CXX=$(NDK_BIN)/i686-linux-android21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} -buildmode=c-shared -o $(ANDROID_OUT)/x86/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -buildmode=c-shared -o $(ANDROID_OUT)/x86/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 android-x86_64:
 	CGO_ENABLED=1 \
@@ -55,7 +68,7 @@ android-x86_64:
 	GOARCH=amd64 \
 	CC=$(NDK_BIN)/x86_64-linux-android21-clang \
 	CXX=$(NDK_BIN)/x86_64-linux-android21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} -buildmode=c-shared -o $(ANDROID_OUT)/x86_64/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -buildmode=c-shared -o $(ANDROID_OUT)/x86_64/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 ios-x86_64-sim:
 	GOARCH=amd64 \
@@ -64,6 +77,7 @@ ios-x86_64-sim:
 	GO_GNARKPROVER_DIR=${GO_GNARKPROVER_DIR} \
 	GO_TARGET_LIB=${GO_TARGET_LIB} \
 	BUILD_DIR=${BUILD_DIR} \
+	GOX_TAGS=${GOX_TAGS} \
 	./build_ios.sh
 
 ios-arm64-sim:
@@ -73,6 +87,7 @@ ios-arm64-sim:
 	GO_GNARKPROVER_DIR=${GO_GNARKPROVER_DIR} \
 	GO_TARGET_LIB=${GO_TARGET_LIB} \
 	BUILD_DIR=${BUILD_DIR} \
+	GOX_TAGS=${GOX_TAGS} \
 	./build_ios.sh
 
 ios-arm64:
@@ -82,6 +97,7 @@ ios-arm64:
 	GO_GNARKPROVER_DIR=${GO_GNARKPROVER_DIR} \
 	GO_TARGET_LIB=${GO_TARGET_LIB} \
 	BUILD_DIR=${BUILD_DIR} \
+	GOX_TAGS=${GOX_TAGS} \
 	./build_ios.sh
 
 # Omitting 32 bit cpu archs as compilations failes for them
