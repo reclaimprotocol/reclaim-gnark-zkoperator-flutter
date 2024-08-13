@@ -8,16 +8,18 @@ IOS_OUT:=$(PROJECT_DIR)/ios
 ANDROID_OUT:=$(PROJECT_DIR)/android/src/main/jniLibs
 
 # Could be ANDROID_NDK_HOME=$(ANDROID_HOME)/ndk/23.1.7779620/toolchains/llvm/prebuilt/darwin-x86_64
+ifeq ($(findstring android,$(MAKECMDGOALS)),android)
 ifndef ANDROID_NDK_HOME
 $(error ANDROID_NDK_HOME is not set)
 endif
 NDK_BIN:=$(ANDROID_NDK_HOME)/bin
+endif
 
 # Go library path
 ifndef GO_GNARKPROVER_DIR
 $(error GO_GNARKPROVER_DIR is not set)
 endif
-GO_TARGET_LIB:=$(GO_GNARKPROVER_DIR)/libprove.go
+GO_TARGET_LIB:=$(GO_GNARKPROVER_DIR)/libraries/prover/libprove.go
 
 # init
 # Create a directory for storing all intermediate build files
