@@ -9,7 +9,7 @@ import 'package:gnarkprover/gnarkprover.dart' as gnarkprover;
 void main() {
   gnarkprover.initializeSync();
 
-  runApp(const MyApp());
+  runApp(const MaterialApp(home: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
@@ -52,53 +52,82 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     const spacerSmall = SizedBox(height: 10);
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Gnark Prover Example'),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(10),
-          children: [
-            const Text(
-              'This can be used to call gnarkprover\'s native functions for gnark prove through FFI that is shipped as source in the package.',
-              style: TextStyle(fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 25),
-            ListTile(
-              title: const Text('proveSync() ='),
-              subtitle: SelectableText(proveSyncResult.toString()),
-            ),
-            FilledButton(
-              onPressed: onProveSync,
-              child: const Text('Prove Sync'),
-            ),
-            const Divider(),
-            spacerSmall,
-            FutureBuilder<String>(
-              future: proveAsyncResult,
-              builder: (
-                BuildContext context,
-                AsyncSnapshot<String> value,
-              ) {
-                final displayValue = (value.hasData) ? value.data : 'null';
-                return ListTile(
-                  title: Text(
-                      'proveAsync() (status ${value.connectionState.name}) ='),
-                  subtitle: SelectableText(displayValue.toString()),
-                );
-              },
-            ),
-            FilledButton(
-              onPressed: onProveAsync,
-              child: const Text('Prove Async'),
-            ),
-            const SizedBox(
-              height: 100,
-            ),
-          ],
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Gnark Prover Example'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(10),
+        children: [
+          const Text(
+            'This can be used to call gnarkprover\'s native functions for gnark prove through FFI that is shipped as source in the package.',
+            style: TextStyle(fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 25),
+          DropdownButton(
+            onChanged: (algorithm) async {
+              if (algorithm != null) {
+                final response =
+                    await gnarkprover.initializeAlgorithm(algorithm);
+                print('response: $response');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Response: $response'),
+                    ),
+                  );
+                }
+              }
+            },
+            items: [
+              DropdownMenuItem(
+                value: gnarkprover.KeyAlgorithmType.CHACHA20,
+                child: Text('CHACHA 20'),
+              ),
+              DropdownMenuItem(
+                value: gnarkprover.KeyAlgorithmType.AES_128,
+                child: Text('AES 128'),
+              ),
+              DropdownMenuItem(
+                value: gnarkprover.KeyAlgorithmType.AES_256,
+                child: Text('AES 256'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 25),
+          ListTile(
+            title: const Text('proveSync() ='),
+            subtitle: SelectableText(proveSyncResult.toString()),
+          ),
+          FilledButton(
+            onPressed: onProveSync,
+            child: const Text('Prove Sync'),
+          ),
+          const Divider(),
+          spacerSmall,
+          FutureBuilder<String>(
+            future: proveAsyncResult,
+            builder: (
+              BuildContext context,
+              AsyncSnapshot<String> value,
+            ) {
+              final displayValue = (value.hasData) ? value.data : 'null';
+              return ListTile(
+                title: Text(
+                    'proveAsync() (status ${value.connectionState.name}) ='),
+                subtitle: SelectableText(displayValue.toString()),
+              );
+            },
+          ),
+          FilledButton(
+            onPressed: onProveAsync,
+            child: const Text('Prove Async'),
+          ),
+          const SizedBox(
+            height: 100,
+          ),
+        ],
       ),
     );
   }

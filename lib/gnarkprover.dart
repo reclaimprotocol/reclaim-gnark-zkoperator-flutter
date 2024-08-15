@@ -5,14 +5,51 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:gnarkprover/assets.dart';
 
 import 'gnarkprover_bindings_generated.dart';
+
+export 'assets.dart';
 
 part 'gnarkprover.bindings.dart';
 part 'gnarkprover.utils.dart';
 
 void initializeSync() {
   return _bindings.Init();
+}
+
+Future<bool> initializeAlgorithm(KeyAlgorithmType algorithm) async {
+  final provingKeyFuture = algorithm.fetchKeyAsset();
+  final r1csFuture = algorithm.fetchR1CSAsset();
+
+  await Future.wait([provingKeyFuture, r1csFuture]);
+
+  final provingKey = await provingKeyFuture;
+  final r1cs = await r1csFuture;
+
+  if (provingKey == null || r1cs == null) return false;
+
+  Pointer<GoSlice>? provingKeyPointer;
+  Pointer<GoSlice>? r1csPointer;
+  try {
+    provingKeyPointer = _GoSliceExtension.fromUint8List(provingKey);
+    r1csPointer = _GoSliceExtension.fromUint8List(r1cs);
+    final result = _bindings.InitAlgorithm(
+      algorithm.id,
+      provingKeyPointer.ref,
+      r1csPointer.ref,
+    );
+    return result == 1;
+  } finally {
+    if (provingKeyPointer != null) {
+      calloc.free(provingKeyPointer.ref.data);
+      calloc.free(provingKeyPointer);
+    }
+    if (r1csPointer != null) {
+      calloc.free(r1csPointer.ref.data);
+      calloc.free(r1csPointer);
+    }
+  }
 }
 
 String proveSync(Uint8List inputBytes) {

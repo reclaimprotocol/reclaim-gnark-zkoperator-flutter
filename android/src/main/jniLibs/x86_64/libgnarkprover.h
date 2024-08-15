@@ -80,6 +80,7 @@ extern "C" {
 
 extern void enforce_binding();
 extern void Init();
+extern GoUint8 InitAlgorithm(GoUint8 algorithmID, GoSlice provingKey, GoSlice r1cs);
 extern GoUint8 InitComplete();
 extern void Free(void* pointer);
 

@@ -1,19 +1,25 @@
 PODS:
+  - cupertino_http (0.0.1):
+    - Flutter
   - Flutter (1.0.0)
   - gnarkprover (0.1.0):
     - Flutter
 
 DEPENDENCIES:
+  - cupertino_http (from `.symlinks/plugins/cupertino_http/ios`)
   - Flutter (from `Flutter`)
   - gnarkprover (from `.symlinks/plugins/gnarkprover/ios`)
 
 EXTERNAL SOURCES:
+  cupertino_http:
+    :path: ".symlinks/plugins/cupertino_http/ios"
   Flutter:
     :path: Flutter
   gnarkprover:
     :path: ".symlinks/plugins/gnarkprover/ios"
 
 SPEC CHECKSUMS:
+  cupertino_http: 1a3a0f163c1b26e7f1a293b33d476e0fde7a64ec
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   gnarkprover: 22bfc2d92367534c43d87db54a9d1c7c2c5d4a0b
 
