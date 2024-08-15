@@ -41,36 +41,27 @@ class GnarkProverBindings {
       _lookup<ffi.NativeFunction<ffi.Void Function()>>('Init');
   late final _Init = _InitPtr.asFunction<void Function()>();
 
-
   int InitComplete() {
     return _InitComplete();
   }
 
   late final _InitCompletePtr =
-  _lookup<ffi.NativeFunction<ffi.Uint8 Function()>>('InitComplete');
+      _lookup<ffi.NativeFunction<ffi.Uint8 Function()>>('InitComplete');
   late final _InitComplete = _InitCompletePtr.asFunction<int Function()>();
 
-  Prove_return Prove(
-    GoSlice params
-  ) {
-    return _Prove(
-        params
-    );
+  Prove_return Prove(GoSlice params) {
+    return _Prove(params);
   }
 
-  late final _ProvePtr = _lookup<
-      ffi.NativeFunction<
-          Prove_return Function(
-              GoSlice)>>('Prove');
-  late final _Prove = _ProvePtr.asFunction<
-      Prove_return Function(GoSlice)>();
-
+  late final _ProvePtr =
+      _lookup<ffi.NativeFunction<Prove_return Function(GoSlice)>>('Prove');
+  late final _Prove = _ProvePtr.asFunction<Prove_return Function(GoSlice)>();
 
   int InitAlgorithm(
-      int algorithmID,
-      GoSlice provingKey,
-      GoSlice r1cs,
-      ) {
+    int algorithmID,
+    GoSlice provingKey,
+    GoSlice r1cs,
+  ) {
     return _InitAlgorithm(
       algorithmID,
       provingKey,
@@ -79,11 +70,10 @@ class GnarkProverBindings {
   }
 
   late final _InitAlgorithmPtr =
-  _lookup<ffi.NativeFunction<GoUint8 Function(GoUint8, GoSlice, GoSlice)>>(
-      'InitAlgorithm');
+      _lookup<ffi.NativeFunction<GoUint8 Function(GoUint8, GoSlice, GoSlice)>>(
+          'InitAlgorithm');
   late final _InitAlgorithm =
-  _InitAlgorithmPtr.asFunction<int Function(int, GoSlice, GoSlice)>();
-
+      _InitAlgorithmPtr.asFunction<int Function(int, GoSlice, GoSlice)>();
 }
 
 final class GoSlice extends ffi.Struct {
