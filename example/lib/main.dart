@@ -3,13 +3,27 @@ import 'dart:async';
 import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:gnarkprover/gnarkprover.dart' as gnarkprover;
+import 'package:gnarkprover/gnarkprover.dart';
+import 'package:logging/logging.dart';
+
+final logs = <LogRecord>[];
+
+final logger = Logger('gnarkprover_example');
 
 void main() {
-  _DemoDebugging.trackTaskAsync(() {
-    return gnarkprover.initializeAsync();
-  }, 'initializeAsync');
+  hierarchicalLoggingEnabled = true;
+
+  Logger('').onRecord.listen((entry) {
+    if (!kReleaseMode) {
+      debugPrintThrottled(
+          '${entry.sequenceNumber} [${entry.level}] ${entry.message}');
+    }
+    logs.add(entry);
+  });
+  Logger('').level = Level.ALL;
 
   runApp(const MaterialApp(home: MyApp()));
 }
@@ -29,24 +43,48 @@ class _MyAppState extends State<MyApp> {
   Future<String>? proveAsyncResult;
   gnarkprover.KeyAlgorithmType? _selectedAlgorithmType;
 
-  void onProveAsync() {
-    final resultFuture = _DemoDebugging.trackTaskAsync(() {
-      // runs on another isolate asynchronously
-      return gnarkprover.proveAsync(param);
-    }, 'onProveAsync');
-
-    setState(() {
-      proveAsyncResult = resultFuture;
-    });
+  void onInitializeButtonPressed() async {
+    lock();
+    try {
+      await _DemoDebugging.trackTaskAsync(() {
+        return gnarkprover.initializeSync();
+      }, 'initializeSync');
+    } finally {
+      unlock();
+    }
   }
 
-  Future<void> _initializeAlgorithm(
+  void onProveButtonPressed() async {
+    try {
+      lock();
+      final resultFuture = _DemoDebugging.trackTaskAsync(() {
+        // runs on another isolate asynchronously
+        return gnarkprover.proveSync(param);
+      }, 'proveSync');
+
+      setState(() {
+        proveAsyncResult = resultFuture;
+      });
+
+      await resultFuture;
+    } finally {
+      unlock();
+    }
+  }
+
+  Future<void> _initializeAlgorithmButton(
     gnarkprover.KeyAlgorithmType algorithm,
   ) async {
-    final response = await _DemoDebugging.trackTaskAsync(() {
-      // runs on another isolate asynchronously
-      return gnarkprover.initializeAlgorithmAsync(algorithm);
-    }, 'initializeAlgorithmAsync');
+    bool response = false;
+    try {
+      lock();
+      response = await _DemoDebugging.trackTaskAsync(() {
+        // runs on another isolate asynchronously
+        return gnarkprover.initializeAlgorithm(algorithm);
+      }, 'initializeAlgorithm');
+    } finally {
+      unlock();
+    }
 
     if (mounted) {
       final msg = ScaffoldMessenger.of(context);
@@ -63,6 +101,20 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  bool _locked = false;
+
+  void lock() {
+    setState(() {
+      _locked = true;
+    });
+  }
+
+  void unlock() {
+    setState(() {
+      _locked = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     const spacerSmall = SizedBox(height: 10);
@@ -70,6 +122,19 @@ class _MyAppState extends State<MyApp> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gnark Prover Example'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const _LogsViewerScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.bug_report),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(10),
@@ -80,6 +145,11 @@ class _MyAppState extends State<MyApp> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 25),
+          FilledButton(
+            onPressed: _locked ? null : onInitializeButtonPressed,
+            child: const Text('Initialize'),
+          ),
+          spacerSmall,
           DropdownButton(
             value: _selectedAlgorithmType,
             hint: const Text(
@@ -103,15 +173,17 @@ class _MyAppState extends State<MyApp> {
                 child: Text('AES 256'),
               ),
             ],
-            onChanged: (algorithm) {
-              setState(() {
-                _selectedAlgorithmType = algorithm;
-              });
+            onChanged: _locked
+                ? null
+                : (KeyAlgorithmType? algorithm) {
+                    setState(() {
+                      _selectedAlgorithmType = algorithm;
+                    });
 
-              if (algorithm != null) {
-                _initializeAlgorithm(algorithm);
-              }
-            },
+                    if (algorithm != null) {
+                      _initializeAlgorithmButton(algorithm);
+                    }
+                  },
           ),
           spacerSmall,
           FutureBuilder<String>(
@@ -123,14 +195,14 @@ class _MyAppState extends State<MyApp> {
               final displayValue = (value.hasData) ? value.data : 'null';
               return ListTile(
                 title: Text(
-                    'proveAsync() (status ${value.connectionState.name}) ='),
+                    'proveSync() (status ${value.connectionState.name}) ='),
                 subtitle: SelectableText(displayValue.toString()),
               );
             },
           ),
           FilledButton(
-            onPressed: onProveAsync,
-            child: const Text('Prove Async'),
+            onPressed: _locked ? null : onProveButtonPressed,
+            child: const Text('Prove Sync'),
           ),
           const SizedBox(
             height: 100,
@@ -142,22 +214,14 @@ class _MyAppState extends State<MyApp> {
 }
 
 class _DemoDebugging {
-  static int _i = 0;
   static void logEvent(
     Object? message, {
     String? tag,
     Object? error,
     StackTrace? stackTrace,
   }) {
-    final id = _i++;
-    final label = '$id [$tag]';
-    debugPrint('$label $message');
-    if (error != null) {
-      debugPrintThrottled('$id [$tag] (error) $error');
-    }
-    if (stackTrace != null) {
-      debugPrintStack(stackTrace: stackTrace, label: label);
-    }
+    final label = '[$tag]';
+    logger.info('$label $message', error, stackTrace);
   }
 
   static Future<T> trackTaskAsync<T>(
@@ -181,5 +245,47 @@ class _DemoDebugging {
   static Uint8List fromHexStringToUint8List(String hexString) {
     final bytes = hex.decode(hexString);
     return Uint8List.fromList(bytes);
+  }
+}
+
+class _LogsViewerScreen extends StatelessWidget {
+  const _LogsViewerScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Logs'),
+        actions: [
+          OutlinedButton(
+            onPressed: () async {
+              final msg = ScaffoldMessenger.of(context);
+              final text = logs
+                  .map((e) => '${e.sequenceNumber} [${e.level}] ${e.message}')
+                  .join('\n');
+              await Clipboard.setData(
+                ClipboardData(text: text),
+              );
+              msg.showSnackBar(
+                const SnackBar(
+                  content: Text('Logs Copied'),
+                ),
+              );
+            },
+            child: const Text('Copy'),
+          ),
+        ],
+      ),
+      body: ListView.builder(
+        itemCount: logs.length,
+        itemBuilder: (context, index) {
+          final log = logs[index];
+          return ExpansionTile(
+            leading: Text(log.sequenceNumber.toString()),
+            title: Text(log.message),
+          );
+        },
+      ),
+    );
   }
 }
