@@ -20,7 +20,7 @@ class GnarkProverBindings {
       : _lookup = lookup;
 
   void Free(
-    ffi.Pointer<ffi.Uint8> pointer,
+    ffi.Pointer pointer,
   ) {
     return _Free(
       pointer,
@@ -28,18 +28,8 @@ class GnarkProverBindings {
   }
 
   late final _FreePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Uint8>)>>(
-          'Free');
-  late final _Free =
-      _FreePtr.asFunction<void Function(ffi.Pointer<ffi.Uint8>)>();
-
-  void Init() {
-    return _Init();
-  }
-
-  late final _InitPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>('Init');
-  late final _Init = _InitPtr.asFunction<void Function()>();
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer)>>('Free');
+  late final _Free = _FreePtr.asFunction<void Function(ffi.Pointer)>();
 
   int InitComplete() {
     return _InitComplete();

@@ -17,10 +17,6 @@ part 'gnarkprover.utils.dart';
 
 final _logger = Logger('gnarkprover');
 
-void initializeSync() {
-  return _bindings.Init();
-}
-
 final _didInitializeCache = <KeyAlgorithmType, bool>{};
 
 final _initializeAlgorithmMutex = Mutex();
@@ -63,13 +59,14 @@ Future<bool> initializeAlgorithm(KeyAlgorithmType algorithm) async {
 
     final now = DateTime.now();
 
-    _logger.fine('Running InitAlgorithm for ${algorithm.name}');
+    _logger.fine('Running InitAlgorithm new for ${algorithm.name}');
 
     final result = _bindings.InitAlgorithm(
       algorithm.id,
       provingKeyPointer.ref,
       r1csPointer.ref,
     );
+
     _logger.fine(
       'Init complete for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
     );
@@ -82,12 +79,12 @@ Future<bool> initializeAlgorithm(KeyAlgorithmType algorithm) async {
   } finally {
     _initializeAlgorithmMutex.release();
     if (provingKeyPointer != null) {
-      calloc.free(provingKeyPointer.ref.data);
-      calloc.free(provingKeyPointer);
+      _bindings.Free(provingKeyPointer.ref.data);
+      _bindings.Free(provingKeyPointer);
     }
     if (r1csPointer != null) {
-      calloc.free(r1csPointer.ref.data);
-      calloc.free(r1csPointer);
+      _bindings.Free(r1csPointer.ref.data);
+      _bindings.Free(r1csPointer);
     }
   }
 }
@@ -108,8 +105,8 @@ String proveSync(Uint8List inputBytes) {
   );
 
   // freeing up memory for inputBytesGoPointer
-  calloc.free(inputBytesGoPointer.ref.data);
-  calloc.free(inputBytesGoPointer);
+  _bindings.Free(inputBytesGoPointer.ref.data);
+  _bindings.Free(inputBytesGoPointer);
 
   final proofStr = String.fromCharCodes(proof.r0.asTypedList(proof.r1));
 

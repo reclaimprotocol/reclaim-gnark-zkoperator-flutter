@@ -10,7 +10,7 @@ set -e
 # Added -asmflags=all="-trimpath=$PWD" to remove file system paths from the compiled binary.
 export GOOS=ios
 export CGO_ENABLED=1
-export CGO_CFLAGS="-fembed-bitcode -Os -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables"
+export CGO_CFLAGS=""
 # export MIN_VERSION=15
 
 SDK_PATH=$(xcrun --sdk "$SDK" --show-sdk-path)
@@ -26,7 +26,5 @@ BUILD_OUTPUT_DIR="${BUILD_DIR}/${GOARCH}_${SDK}"
 mkdir -p "$BUILD_OUTPUT_DIR"
 
 go build -C "$GO_GNARKPROVER_DIR" -trimpath ${GOX_TAGS} -buildmode=c-archive \
-  -ldflags="-s -w -extldflags '-Wl,-s -Wl,-x'" \
-  -gcflags=all="-l -B" \
-  -asmflags=all="-trimpath=$PWD" \
+  -ldflags="-s -w" \
   -o "${BUILD_OUTPUT_DIR}/${LIB_NAME}.a" "$GO_TARGET_LIB"
