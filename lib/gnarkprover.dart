@@ -79,12 +79,12 @@ Future<bool> initializeAlgorithm(KeyAlgorithmType algorithm) async {
   } finally {
     _initializeAlgorithmMutex.release();
     if (provingKeyPointer != null) {
-      _bindings.Free(provingKeyPointer.ref.data);
-      _bindings.Free(provingKeyPointer);
+      calloc.free(provingKeyPointer.ref.data);
+      calloc.free(provingKeyPointer);
     }
     if (r1csPointer != null) {
-      _bindings.Free(r1csPointer.ref.data);
-      _bindings.Free(r1csPointer);
+      calloc.free(r1csPointer.ref.data);
+      calloc.free(r1csPointer);
     }
   }
 }
@@ -105,8 +105,8 @@ String proveSync(Uint8List inputBytes) {
   );
 
   // freeing up memory for inputBytesGoPointer
-  _bindings.Free(inputBytesGoPointer.ref.data);
-  _bindings.Free(inputBytesGoPointer);
+  calloc.free(inputBytesGoPointer.ref.data);
+  calloc.free(inputBytesGoPointer);
 
   final proofStr = String.fromCharCodes(proof.r0.asTypedList(proof.r1));
 
