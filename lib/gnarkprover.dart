@@ -136,9 +136,12 @@ String proveSync(Uint8List inputBytes) {
   return proofStr;
 }
 
-final _proveWorkerFuture = _ProveWorker.spawn();
 
 Future<String> proveAsync(Uint8List inputBytes) async {
-  final worker = await _proveWorkerFuture;
-  return worker.prove(inputBytes);
+  final worker = await  _ProveWorker.spawn();
+  try {
+    return worker.prove(inputBytes);
+  } finally {
+    worker.close();
+  }
 }
