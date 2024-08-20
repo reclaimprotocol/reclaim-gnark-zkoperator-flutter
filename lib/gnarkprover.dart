@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
@@ -15,11 +16,13 @@ export 'assets.dart';
 part 'gnarkprover.bindings.dart';
 part 'gnarkprover.utils.dart';
 
+part 'worker/initialize.dart';
+part 'worker/log.dart';
+part 'worker/prover.dart';
+
 final _logger = Logger('gnarkprover');
 
 final _didInitializeCache = <KeyAlgorithmType, bool>{};
-
-final _initializeAlgorithmMutex = Mutex();
 
 Future<bool> initializeAlgorithm(KeyAlgorithmType algorithm) async {
   if (_didInitializeCache[algorithm] == true) return true;
@@ -89,6 +92,20 @@ Future<bool> initializeAlgorithm(KeyAlgorithmType algorithm) async {
   }
 }
 
+final _initAlgorithmWorkerFuture = _InitAlgorithmWorker.spawn();
+
+Future<bool> initializeAlgorithmAsync(KeyAlgorithmType algorithm) async {
+  if (_didInitializeCache[algorithm] == true) return true;
+
+  final worker = await _initAlgorithmWorkerFuture;
+
+  final didInitialize = await worker.initializeAlgorithm(algorithm);
+
+  _didInitializeCache[algorithm] = didInitialize;
+
+  return didInitialize;
+}
+
 String proveSync(Uint8List inputBytes) {
   final inputBytesGoPointer = _GoSliceExtension.fromUint8List(inputBytes);
   final now = DateTime.now();
@@ -113,6 +130,15 @@ String proveSync(Uint8List inputBytes) {
   // freeing up memory for proof
   _bindings.Free(proof.r0);
 
+  _logger.finest('[$hash] proof completed: $proofStr');
+
   // returning the json string response
   return proofStr;
+}
+
+final _proveWorkerFuture = _ProveWorker.spawn();
+
+Future<String> proveAsync(Uint8List inputBytes) async {
+  final worker = await _proveWorkerFuture;
+  return worker.prove(inputBytes);
 }
