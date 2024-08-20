@@ -40,19 +40,9 @@ final Uint8List param = _DemoDebugging.fromHexStringToUint8List(
 );
 
 class _MyAppState extends State<MyApp> {
+  Future<String>? proveSyncResult;
   Future<String>? proveAsyncResult;
   gnarkprover.KeyAlgorithmType? _selectedAlgorithmType;
-
-  void onInitializeButtonPressed() async {
-    lock();
-    try {
-      await _DemoDebugging.trackTaskAsync(() {
-        return gnarkprover.initializeSync();
-      }, 'initializeSync');
-    } finally {
-      unlock();
-    }
-  }
 
   void onProveButtonPressed() async {
     try {
@@ -61,6 +51,24 @@ class _MyAppState extends State<MyApp> {
         // runs on another isolate asynchronously
         return gnarkprover.proveSync(param);
       }, 'proveSync');
+
+      setState(() {
+        proveSyncResult = resultFuture;
+      });
+
+      await resultFuture;
+    } finally {
+      unlock();
+    }
+  }
+
+  void onProveAsyncButtonPressed() async {
+    try {
+      lock();
+      final resultFuture = _DemoDebugging.trackTaskAsync(() {
+        // runs on another isolate asynchronously
+        return gnarkprover.proveAsync(param);
+      }, 'proveAsync');
 
       setState(() {
         proveAsyncResult = resultFuture;
@@ -82,6 +90,35 @@ class _MyAppState extends State<MyApp> {
         // runs on another isolate asynchronously
         return gnarkprover.initializeAlgorithm(algorithm);
       }, 'initializeAlgorithm');
+    } finally {
+      unlock();
+    }
+
+    if (mounted) {
+      final msg = ScaffoldMessenger.of(context);
+
+      msg.removeCurrentSnackBar();
+
+      msg.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Initialization of "${algorithm.name}" was ${response ? 'Successful' : 'Failure'}',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _initializeAlgorithmAsyncButton(
+    gnarkprover.KeyAlgorithmType algorithm,
+  ) async {
+    bool response = false;
+    try {
+      lock();
+      response = await _DemoDebugging.trackTaskAsync(() {
+        // runs on another isolate asynchronously
+        return gnarkprover.initializeAlgorithmAsync(algorithm);
+      }, 'initializeAlgorithmAsync');
     } finally {
       unlock();
     }
@@ -145,16 +182,15 @@ class _MyAppState extends State<MyApp> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 25),
-          FilledButton(
-            onPressed: _locked ? null : onInitializeButtonPressed,
-            child: const Text('Initialize'),
-          ),
-          spacerSmall,
-          DropdownButton(
+          DropdownButtonFormField(
             value: _selectedAlgorithmType,
             hint: const Text(
               'Select algorithm',
               textAlign: TextAlign.center,
+            ),
+            decoration: const InputDecoration(
+              labelText: 'Select algorithm',
+              border: OutlineInputBorder(),
             ),
             alignment: Alignment.center,
             isExpanded: true,
@@ -186,8 +222,48 @@ class _MyAppState extends State<MyApp> {
                   },
           ),
           spacerSmall,
+          DropdownButtonFormField(
+            value: _selectedAlgorithmType,
+            hint: const Text(
+              'Select algorithm asynchronously',
+              textAlign: TextAlign.center,
+            ),
+            decoration: const InputDecoration(
+              labelText: 'Select algorithm asynchronously',
+              border: OutlineInputBorder(),
+            ),
+            alignment: Alignment.center,
+            isExpanded: true,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            items: const [
+              DropdownMenuItem(
+                value: gnarkprover.KeyAlgorithmType.CHACHA20,
+                child: Text('CHACHA 20'),
+              ),
+              DropdownMenuItem(
+                value: gnarkprover.KeyAlgorithmType.AES_128,
+                child: Text('AES 128'),
+              ),
+              DropdownMenuItem(
+                value: gnarkprover.KeyAlgorithmType.AES_256,
+                child: Text('AES 256'),
+              ),
+            ],
+            onChanged: _locked
+                ? null
+                : (KeyAlgorithmType? algorithm) {
+                    setState(() {
+                      _selectedAlgorithmType = algorithm;
+                    });
+
+                    if (algorithm != null) {
+                      _initializeAlgorithmAsyncButton(algorithm);
+                    }
+                  },
+          ),
+          spacerSmall,
           FutureBuilder<String>(
-            future: proveAsyncResult,
+            future: proveSyncResult,
             builder: (
               BuildContext context,
               AsyncSnapshot<String> value,
@@ -200,9 +276,30 @@ class _MyAppState extends State<MyApp> {
               );
             },
           ),
+          spacerSmall,
+          FutureBuilder<String>(
+            future: proveAsyncResult,
+            builder: (
+              BuildContext context,
+              AsyncSnapshot<String> value,
+            ) {
+              final displayValue = (value.hasData) ? value.data : 'null';
+              return ListTile(
+                title: Text(
+                    'proveAsync() (status ${value.connectionState.name}) ='),
+                subtitle: SelectableText(displayValue.toString()),
+              );
+            },
+          ),
+          spacerSmall,
           FilledButton(
             onPressed: _locked ? null : onProveButtonPressed,
             child: const Text('Prove Sync'),
+          ),
+          spacerSmall,
+          FilledButton(
+            onPressed: _locked ? null : onProveAsyncButtonPressed,
+            child: const Text('Prove Async'),
           ),
           const SizedBox(
             height: 100,
