@@ -130,15 +130,12 @@ String proveSync(Uint8List inputBytes) {
   // freeing up memory for proof
   _bindings.Free(proof.r0);
 
-  _logger.finest('[$hash] proof completed: $proofStr');
-
   // returning the json string response
   return proofStr;
 }
 
-
 Future<String> proveAsync(Uint8List inputBytes) async {
-  final worker = await  _ProveWorker.spawn();
+  final worker = await _ProveWorker.spawn();
   try {
     return worker.prove(inputBytes);
   } finally {

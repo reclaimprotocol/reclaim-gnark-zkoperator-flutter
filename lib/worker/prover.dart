@@ -92,8 +92,6 @@ class _ProveWorker {
     // freeing up memory for proof
     _bindings.Free(proof.r0);
 
-    _logger.finest('[$hash] proof completed: $proofStr');
-
     // returning the json string response
     return proofStr;
   }
