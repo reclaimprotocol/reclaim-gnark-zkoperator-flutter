@@ -24,118 +24,54 @@ final _logger = Logger('gnarkprover');
 
 final _didInitializeCache = <KeyAlgorithmType, bool>{};
 
-Future<bool> initializeAlgorithm(KeyAlgorithmType algorithm) async {
-  if (_didInitializeCache[algorithm] == true) return true;
-  final provingKeyFuture = () async {
-    final now = DateTime.now();
-    _logger.fine('Downloading key asset for ${algorithm.name}');
-    final asset = await algorithm.fetchKeyAsset();
-    _logger.fine(
-      'Downloaded key asset for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
-    );
-    return asset;
-  }();
-  final r1csFuture = () async {
-    final now = DateTime.now();
-    _logger.fine('Downloading r1cs asset for ${algorithm.name}');
-    final asset = await algorithm.fetchR1CSAsset();
-    _logger.fine(
-      'Downloaded r1cs asset for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
-    );
-    return asset;
-  }();
+class Gnarkprover {
+  static Future<void> _initialize() async {
+    final initAlgorithmWorker = await _InitAlgorithmWorker.spawn();
+    try {
+      await Future.wait(KeyAlgorithmType.values.map((algorithm) async {
+        // Skip initialization for algorithms where last initialization was successful
+        if (_didInitializeCache[algorithm] == true) return true;
 
-  await Future.wait([provingKeyFuture, r1csFuture]);
-
-  final provingKey = await provingKeyFuture;
-  final r1cs = await r1csFuture;
-
-  if (provingKey == null || r1cs == null) return false;
-
-  Pointer<GoSlice>? provingKeyPointer;
-  Pointer<GoSlice>? r1csPointer;
-  try {
-    await _initializeAlgorithmMutex.acquire();
-    provingKeyPointer = _GoSliceExtension.fromUint8List(provingKey);
-    r1csPointer = _GoSliceExtension.fromUint8List(r1cs);
-
-    final now = DateTime.now();
-
-    _logger.fine('Running InitAlgorithm new for ${algorithm.name}');
-
-    final result = _bindings.InitAlgorithm(
-      algorithm.id,
-      provingKeyPointer.ref,
-      r1csPointer.ref,
-    );
-
-    _logger.fine(
-      'Init complete for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
-    );
-
-    final didInitialize = result == 1;
-
-    _didInitializeCache[algorithm] = didInitialize;
-
-    return didInitialize;
-  } finally {
-    _initializeAlgorithmMutex.release();
-    if (provingKeyPointer != null) {
-      calloc.free(provingKeyPointer.ref.data);
-      calloc.free(provingKeyPointer);
-    }
-    if (r1csPointer != null) {
-      calloc.free(r1csPointer.ref.data);
-      calloc.free(r1csPointer);
+        _didInitializeCache[algorithm] =
+            await initAlgorithmWorker.initializeAlgorithm(
+          algorithm,
+        );
+      }));
+    } finally {
+      initAlgorithmWorker.close();
     }
   }
-}
 
-final _initAlgorithmWorkerFuture = _InitAlgorithmWorker.spawn();
+  static Completer<Gnarkprover>? _completer;
+  static Future<Gnarkprover> getInstance() async {
+    if (_completer == null) {
+      final completer = Completer<Gnarkprover>();
+      _completer = completer;
+      try {
+        await _initialize();
+        completer.complete(Gnarkprover._());
+      } catch (e) {
+        // If there's an error, explicitly return the future with an error.
+        // then set the completer to null so we can retry.
+        completer.completeError(e);
+        final Future<Gnarkprover> gnarkProverFuture = completer.future;
+        _completer = null;
+        return gnarkProverFuture;
+      }
+    }
+    return _completer!.future;
+  }
 
-Future<bool> initializeAlgorithmAsync(KeyAlgorithmType algorithm) async {
-  if (_didInitializeCache[algorithm] == true) return true;
+  Gnarkprover._();
 
-  final worker = await _initAlgorithmWorkerFuture;
+  final _proveWorkerFuture = _ProveWorker.spawn();
 
-  final didInitialize = await worker.initializeAlgorithm(algorithm);
+  Future<String> computeWitnessProof(String type, Uint8List bytes) async {
+    final worker = await _proveWorkerFuture;
+    return worker.prove(bytes);
+  }
 
-  _didInitializeCache[algorithm] = didInitialize;
-
-  return didInitialize;
-}
-
-String proveSync(Uint8List inputBytes) {
-  final inputBytesGoPointer = _GoSliceExtension.fromUint8List(inputBytes);
-  final now = DateTime.now();
-
-  final hash = Object().hashCode;
-  _logger.fine(
-    '[$hash] Running prove for input of size ${inputBytes.lengthInBytes} bytes',
-  );
-  final proof = _bindings.Prove(
-    inputBytesGoPointer.ref,
-  );
-  _logger.fine(
-    '[$hash] Prove completed, elapsed ${DateTime.now().difference(now)}',
-  );
-
-  // freeing up memory for inputBytesGoPointer
-  calloc.free(inputBytesGoPointer.ref.data);
-  calloc.free(inputBytesGoPointer);
-
-  final proofStr = String.fromCharCodes(proof.r0.asTypedList(proof.r1));
-
-  // freeing up memory for proof
-  _bindings.Free(proof.r0);
-
-  // returning the json string response
-  return proofStr;
-}
-
-final _proveWorkerFuture = _ProveWorker.spawn();
-
-Future<String> proveAsync(Uint8List inputBytes) async {
-  final worker = await _proveWorkerFuture;
-  return worker.prove(inputBytes);
+  Future<void> close() async {
+    (await _proveWorkerFuture).close();
+  }
 }
