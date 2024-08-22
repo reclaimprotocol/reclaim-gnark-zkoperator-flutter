@@ -26,7 +26,6 @@ final _didInitializeCache = <KeyAlgorithmType, bool>{};
 
 Future<bool> initializeAlgorithm(KeyAlgorithmType algorithm) async {
   if (_didInitializeCache[algorithm] == true) return true;
-
   final provingKeyFuture = () async {
     final now = DateTime.now();
     _logger.fine('Downloading key asset for ${algorithm.name}');
@@ -134,11 +133,9 @@ String proveSync(Uint8List inputBytes) {
   return proofStr;
 }
 
+final _proveWorkerFuture = _ProveWorker.spawn();
+
 Future<String> proveAsync(Uint8List inputBytes) async {
-  final worker = await _ProveWorker.spawn();
-  try {
-    return worker.prove(inputBytes);
-  } finally {
-    worker.close();
-  }
+  final worker = await _proveWorkerFuture;
+  return worker.prove(inputBytes);
 }

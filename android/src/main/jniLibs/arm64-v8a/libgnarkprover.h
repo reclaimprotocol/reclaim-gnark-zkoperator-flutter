@@ -19,7 +19,7 @@ typedef struct { const char *p; ptrdiff_t n; } _GoString_;
 /* Start of preamble from import "C" comments.  */
 
 
-#line 8 "libprove.go"
+#line 10 "libprove.go"
  #include <stdlib.h>
 
 #line 1 "cgo-generated-wrapper"
@@ -79,15 +79,13 @@ extern "C" {
 #endif
 
 extern void enforce_binding();
-extern void Init();
 extern GoUint8 InitAlgorithm(GoUint8 algorithmID, GoSlice provingKey, GoSlice r1cs);
-extern GoUint8 InitComplete();
 extern void Free(void* pointer);
 
 /* Return type for Prove */
 struct Prove_return {
-	void* r0;
-	GoInt r1;
+	void* r0; /* proofRes */
+	GoInt r1; /* resLen */
 };
 extern struct Prove_return Prove(GoSlice params);
 
