@@ -68,19 +68,22 @@ class _ProveWorker {
     }
   }
 
-  static Future<String> _onProveInIsolate(Uint8List inputBytes) async {
+  static Future<String> _onProveInIsolate(
+    // we'll use this to identify proof in logs
+    int id,
+    Uint8List inputBytes,
+  ) async {
     final inputBytesGoPointer = _GoSliceExtension.fromUint8List(inputBytes);
     final now = DateTime.now();
 
-    final hash = Object().hashCode;
     _logger.fine(
-      '[$hash] Running prove for input of size ${inputBytes.lengthInBytes} bytes',
+      '[$id] Running prove for input of size ${inputBytes.lengthInBytes} bytes',
     );
     final proof = _bindings.Prove(
       inputBytesGoPointer.ref,
     );
     _logger.fine(
-      '[$hash] Prove completed, elapsed ${DateTime.now().difference(now)}',
+      '[$id] Prove completed, elapsed ${DateTime.now().difference(now)}',
     );
 
     // freeing up memory for inputBytesGoPointer
@@ -111,11 +114,13 @@ class _ProveWorker {
         return;
       }
       final (id, inputBytes) = message as (int, Uint8List);
+      final proofId = Object().hashCode;
       try {
-        final proofResponse = await _onProveInIsolate(inputBytes);
+        final proofResponse = await _onProveInIsolate(proofId, inputBytes);
         sendPort.send((id, proofResponse));
-      } catch (e) {
-        sendPort.send((id, RemoteError(e.toString(), '')));
+      } catch (e, s) {
+        _logger.severe('[$proofId] Prove Failed in isolate', e, s);
+        sendPort.send((id, RemoteError(e.toString(), s.toString())));
       }
     });
   }
