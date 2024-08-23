@@ -92,6 +92,11 @@ class _ProveWorker {
     // freeing up memory for proof
     _bindings.Free(proof.r0);
 
+    if (!proofStr.startsWith('{')) {
+      _logger.severe('received invalid proof: $proofStr');
+      throw Exception('Invalid proof: $proofStr');
+    }
+
     // returning the json string response
     return proofStr;
   }
