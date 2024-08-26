@@ -2,9 +2,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:dio_smart_retry/dio_smart_retry.dart';
+import 'package:logging/logging.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 
 final _client = () {
+  final logger = Logger('gnarkprover._client.RetryInterceptor');
   final dio = Dio();
   if (Platform.isAndroid || Platform.isIOS) {
     dio.httpClientAdapter = NativeAdapter(
@@ -13,6 +16,16 @@ final _client = () {
       },
     );
   }
+  dio.interceptors.add(RetryInterceptor(
+    dio: dio,
+    logPrint: logger.fine,
+    retries: 3,
+    retryDelays: const [
+      Duration(seconds: 1),
+      Duration(seconds: 2),
+      Duration(seconds: 4),
+    ],
+  ));
   return dio;
 }();
 
