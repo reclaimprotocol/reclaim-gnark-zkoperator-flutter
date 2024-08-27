@@ -10,18 +10,16 @@ git clone $GO_GNARKPROVER_REPO_URL vendor/gnark-symmetric-crypto;
 
 export GO_GNARKPROVER_DIR="$(pwd)/vendor/gnark-symmetric-crypto";
 
-echo "Starting build for iOS"
+git checkout -b "build-$(uuidgen)";
 
-cd src;
-make ios;
-cd ../;
+./scripts/build_ios.sh
+./scripts/build_android.sh
 
 # cleanup
 rm -rf $GO_GNARKPROVER_DIR;
 
 echo "Updating repository with new native libraries";
-git checkout -b "build-$(uuidgen)";
-git add ios;
+
 git commit -m "Update [CI] ios native library";
 git push;
 echo "Starting build for iOS"
