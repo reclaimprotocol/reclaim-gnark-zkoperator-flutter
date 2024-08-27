@@ -20,7 +20,8 @@ cd ../;
 rm -rf $GO_GNARKPROVER_DIR;
 
 echo "Updating repository with new native libraries";
+git checkout -b "build-$(uuidgen)";
 git add ios;
-git commit -m "Update ios native library";
+git commit -m "Update [CI] ios native library";
 git push;
 echo "Starting build for iOS"
