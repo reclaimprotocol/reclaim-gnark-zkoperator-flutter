@@ -21,7 +21,7 @@ rm -rf $GO_GNARKPROVER_DIR;
 
 echo "Updating repository with new native libraries";
 
-dart run ./scripts/bump_version.dart;
+./scripts/update_version.sh;
 git add pubspec.yaml;
 
 git commit -m "Update [CI] ios native library";
