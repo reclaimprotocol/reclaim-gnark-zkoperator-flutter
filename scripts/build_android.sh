@@ -4,7 +4,7 @@ set -e;
 
 echo "Starting build for Android"
 
-if [ -z ${ANDROID_NDK_HOME+x} ]; 
+if [ ! -d ${ANDROID_NDK_HOME} ] || [[ $ANDROID_NDK_HOME != *"toolchains/llvm/prebuilt"* ]]; 
 then 
 echo "Finding Android NDK"; 
 
