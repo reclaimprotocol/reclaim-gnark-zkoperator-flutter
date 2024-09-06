@@ -178,12 +178,12 @@ class _MyAppState extends State<MyApp> {
                       child: CircularProgressIndicator(),
                     ),
                   ),
-                  label: const Text('Proving Async...'),
+                  label: const Text('Proving...'),
                 );
               }
               return FilledButton(
                 onPressed: prover == null ? null : onProveAsyncButtonPressed,
-                child: const Text('Prove Async'),
+                child: const Text('Prove'),
               );
             },
           ),
@@ -236,6 +236,8 @@ class _LogsViewerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lastIndex = logs.length - 1;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Logs'),
@@ -257,12 +259,14 @@ class _LogsViewerScreen extends StatelessWidget {
             },
             child: const Text('Copy'),
           ),
+          const SizedBox(width: 10),
         ],
       ),
       body: ListView.builder(
         itemCount: logs.length,
         itemBuilder: (context, index) {
-          final log = logs[index];
+          // reverse order
+          final log = logs[lastIndex - index];
           return ExpansionTile(
             leading: Text(log.sequenceNumber.toString()),
             title: Text(log.message),

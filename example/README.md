@@ -4,13 +4,9 @@ Demonstrates how to use the gnarkprover plugin.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+- This example can simply be run with `flutter run`.
+- You can initialize the plugin by tapping "Initialize Gnarkprover" button.
+- A proof can be generated for a sample input by tapping "Prove" button.
+- Logs can be accessed in the app by tapping on the debug button in the top right corner of the app.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+For more details, please refer to the README.md of the gnarkprover package, and reclaim_flutter_sdk's README.md.
