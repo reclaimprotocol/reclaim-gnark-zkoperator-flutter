@@ -33,18 +33,24 @@ final _didInitializeCache = <KeyAlgorithmType, bool>{};
 /// This class provides methods to initialize the prover and compute witness proofs.
 class Gnarkprover {
   /// Initializes the prover by loading the necessary algorithms asynchronously.
-  /// This method ensures that each algorithm is initialized only once.
   static Future<void> _initialize() async {
     final initAlgorithmWorker = await _InitAlgorithmWorker.spawn();
     try {
       await Future.wait(KeyAlgorithmType.values.map((algorithm) async {
         // Skip initialization for algorithms where last initialization was successful
         if (_didInitializeCache[algorithm] == true) return true;
+        // just locking the cache to prevent duplicate initialization
+        _didInitializeCache[algorithm] = true;
 
-        _didInitializeCache[algorithm] =
-            await initAlgorithmWorker.initializeAlgorithm(
-          algorithm,
-        );
+        try {
+          await initAlgorithmWorker.initializeAlgorithm(
+            algorithm,
+          );
+        } catch (e, s) {
+          _logger.severe('Error initializing algorithm $algorithm', e, s);
+          _didInitializeCache[algorithm] = false;
+          rethrow;
+        }
       }));
     } finally {
       initAlgorithmWorker.close();
@@ -71,12 +77,13 @@ class Gnarkprover {
       try {
         await _initialize();
         completer.complete(Gnarkprover._());
-      } catch (e) {
+      } catch (e, s) {
         // If there's an error, explicitly return the future with an error.
         // then set the completer to null so we can retry.
         completer.completeError(e);
         final Future<Gnarkprover> gnarkProverFuture = completer.future;
         _completer = null;
+        _logger.severe('Error initializing Gnark prover', e, s);
         return gnarkProverFuture;
       }
     }
@@ -91,7 +98,7 @@ class Gnarkprover {
   ///
   /// The `type` parameter should be one of the key algorithm types supported by the prover.
   /// The `bytes` parameter should be the data in bytes received from the witness to be proven.
-  /// 
+  ///
   /// When using this with `reclaim_flutter_sdk`, this function can be utilized as follows when creating a ReclaimVerification object:
   /// ```dart
   /// final reclaimVerification = ReclaimVerification(
@@ -111,7 +118,7 @@ class Gnarkprover {
   ///   hideLanding: true,
   /// );
   /// ```
-  /// 
+  ///
   /// Note: Use of `computeWitnessProof` could be disabled by default in the reclaim_flutter_sdk as this is still experimental.
   /// Read more about it in reclaim_flutter_sdk's README and reclaim_flutter_sdk/example's README.md.
   Future<String> computeWitnessProof(String type, Uint8List bytes) async {
