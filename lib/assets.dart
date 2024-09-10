@@ -49,7 +49,7 @@ Future<Uint8List?> _loadAssetsIfRequired(String assetUrl) async {
   return null;
 }
 
-const _gnarkAssetBaseUrl = 'https://gnark-assets.s3.ap-south-1.amazonaws.com';
+const _gnarkAssetBaseUrl = 'https://d1e3okc3py860p.cloudfront.net';
 
 enum KeyAlgorithmType {
   CHACHA20(0, 'chacha20'),
