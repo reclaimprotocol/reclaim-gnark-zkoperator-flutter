@@ -73,6 +73,9 @@ class _ProveWorker {
     int id,
     Uint8List inputBytes,
   ) async {
+    if (kDebugMode) {
+      print('inputBytes: ${utf8.decode(inputBytes)}');
+    }
     final inputBytesGoPointer = _GoSliceExtension.fromUint8List(inputBytes);
     final now = DateTime.now();
 
@@ -98,6 +101,10 @@ class _ProveWorker {
     if (!proofStr.startsWith('{')) {
       _logger.severe('received invalid proof: $proofStr');
       throw Exception('Invalid proof: $proofStr');
+    }
+
+    if (kDebugMode) {
+      print('proof: $proofStr');
     }
 
     // returning the json string response
