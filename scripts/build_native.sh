@@ -10,7 +10,11 @@ git clone $GO_GNARKPROVER_REPO_URL vendor/gnark-symmetric-crypto;
 
 export GO_GNARKPROVER_DIR="$(pwd)/vendor/gnark-symmetric-crypto";
 
-BUILD_BRANCH="build-$(uuidgen)"
+get_timestamp() {
+    date "+%Y%m%d%H%M"
+}
+
+BUILD_BRANCH="build-$(get_timestamp)"
 git checkout -b $BUILD_BRANCH;
 
 ./scripts/build_ios.sh
@@ -24,6 +28,6 @@ echo "Updating repository with new native libraries";
 ./scripts/update_version.sh;
 git add pubspec.yaml;
 
-git commit -m "Update [CI] ios native library";
+git commit -m "Update [CI] native libraries for Android & iOS";
 git push --set-upstream origin $BUILD_BRANCH;
 git push;
