@@ -1,6 +1,6 @@
 name: gnarkprover
 description: Reclaim Protocol's library for Gnark Prover
-version: 0.1.1
+version: 0.1.2
 homepage: https://reclaimprotocol.org
 publish_to: none
 
