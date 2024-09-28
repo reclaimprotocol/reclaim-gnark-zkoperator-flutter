@@ -7,7 +7,7 @@ import 'package:logging/logging.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 
 final _client = () {
-  final logger = Logger('gnarkprover._client.RetryInterceptor');
+  final logger = Logger('reclaim_flutter_sdk.gnarkprover._client.RetryInterceptor');
   final dio = Dio();
   if (Platform.isAndroid || Platform.isIOS) {
     dio.httpClientAdapter = NativeAdapter(
