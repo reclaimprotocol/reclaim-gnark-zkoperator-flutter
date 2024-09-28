@@ -73,19 +73,16 @@ class _ProveWorker {
     int id,
     Uint8List inputBytes,
   ) async {
-    if (kDebugMode) {
-      print('inputBytes: ${utf8.decode(inputBytes)}');
-    }
     final inputBytesGoPointer = _GoSliceExtension.fromUint8List(inputBytes);
     final now = DateTime.now();
 
-    _logger.fine(
+    _logger.finest(
       '[$id] Running prove for input of size ${inputBytes.lengthInBytes} bytes',
     );
     final proof = _bindings.Prove(
       inputBytesGoPointer.ref,
     );
-    _logger.fine(
+    _logger.finest(
       '[$id] Prove completed, elapsed ${DateTime.now().difference(now)}',
     );
 
