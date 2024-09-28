@@ -25,7 +25,8 @@ rm -rf $GO_GNARKPROVER_DIR;
 
 echo "Updating repository with new native libraries";
 
-./scripts/update_version.sh;
+bash ./scripts/update_version.sh;
+
 git add pubspec.yaml;
 
 git commit -m "Update [CI] native libraries for Android & iOS";
