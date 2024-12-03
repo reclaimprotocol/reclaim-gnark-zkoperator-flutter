@@ -4,10 +4,10 @@ set -e;
 
 if [ -z "$GO_GNARKPROVER_DIR" ]
 then
-    GO_GNARKPROVER_REPO_URL="https://$PACKAGE_CLONE_USER:$PACkAGE_CLONE_PASSWD@gitlab.reclaimprotocol.org/reclaim/gnark-symmetric-crypto";
+    GO_GNARKPROVER_REPO_URL="https://github.com/reclaimprotocol/zk-symmetric-crypto";
     mkdir -p vendor;
     git clone $GO_GNARKPROVER_REPO_URL vendor/gnark-symmetric-crypto;
-    export GO_GNARKPROVER_DIR="$(pwd)/vendor/gnark-symmetric-crypto";
+    export GO_GNARKPROVER_DIR="$(pwd)/vendor/gnark-symmetric-crypto/gnark";
 fi
 
 get_timestamp() {
