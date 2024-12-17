@@ -15,13 +15,17 @@ class _InitAlgorithmWorker {
   final Map<int, Completer<Object?>> _activeRequests = {};
   int _idCounter = 0;
 
-  Future<bool> initializeAlgorithm(KeyAlgorithmType algorithm) async {
+  Future<bool> initializeAlgorithm(
+    KeyAlgorithmType algorithm,
+    String keyAssetUrl,
+    String r1csAssetUrl,
+  ) async {
     if (_closed) throw StateError('$_debugLabel is disposed');
 
     final completer = Completer<Object?>.sync();
     final id = _idCounter++;
     _activeRequests[id] = completer;
-    _commands.send((id, algorithm));
+    _commands.send((id, algorithm, keyAssetUrl, r1csAssetUrl));
 
     return await completer.future as bool;
   }
@@ -73,11 +77,13 @@ class _InitAlgorithmWorker {
 
   static Future<bool> _onInitAlgorithmInIsolate(
     KeyAlgorithmType algorithm,
+    String keyAssetUrl,
+    String r1csAssetUrl,
   ) async {
     final provingKeyFuture = () async {
       final now = DateTime.now();
       _logger.fine('Downloading key asset for ${algorithm.name}');
-      final asset = await algorithm.fetchKeyAsset();
+      final asset = await algorithm.fetchKeyAsset(keyAssetUrl);
       _logger.fine(
         'Downloaded key asset for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
       );
@@ -86,7 +92,7 @@ class _InitAlgorithmWorker {
     final r1csFuture = () async {
       final now = DateTime.now();
       _logger.fine('Downloading r1cs asset for ${algorithm.name}');
-      final asset = await algorithm.fetchR1CSAsset();
+      final asset = await algorithm.fetchR1CSAsset(r1csAssetUrl);
       _logger.fine(
         'Downloaded r1cs asset for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
       );
@@ -144,9 +150,23 @@ class _InitAlgorithmWorker {
         receivePort.close();
         return;
       }
-      final (id, inputBytes) = message as (int, KeyAlgorithmType);
+      final (
+        id,
+        inputBytes,
+        keyAssetUrl,
+        r1csAssetUrl,
+      ) = message as (
+        int,
+        KeyAlgorithmType,
+        String,
+        String,
+      );
       try {
-        final initResponse = await _onInitAlgorithmInIsolate(inputBytes);
+        final initResponse = await _onInitAlgorithmInIsolate(
+          inputBytes,
+          keyAssetUrl,
+          r1csAssetUrl,
+        );
         sendPort.send((id, initResponse));
       } catch (e) {
         sendPort.send((id, RemoteError(e.toString(), '')));

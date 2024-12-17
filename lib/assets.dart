@@ -7,7 +7,8 @@ import 'package:logging/logging.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 
 final _client = () {
-  final logger = Logger('reclaim_flutter_sdk.gnarkprover._client.RetryInterceptor');
+  final logger =
+      Logger('reclaim_flutter_sdk.gnarkprover._client.RetryInterceptor');
   final dio = Dio();
   if (Platform.isAndroid || Platform.isIOS) {
     dio.httpClientAdapter = NativeAdapter(
@@ -61,15 +62,21 @@ enum KeyAlgorithmType {
 
   const KeyAlgorithmType(this.id, this.key);
 
-  Future<Uint8List?> fetchKeyAsset() {
-    return _loadAssetsIfRequired('$_gnarkAssetBaseUrl/pk.$key');
+  String get defaultKeyAssetUrl => '$_gnarkAssetBaseUrl/pk.$key';
+  String get defaultR1CSAssetUrl => '$_gnarkAssetBaseUrl/r1cs.$key';
+
+  Future<Uint8List?> fetchKeyAsset(String url) {
+    return _loadAssetsIfRequired(url);
   }
 
-  Future<Uint8List?> fetchR1CSAsset() {
-    return _loadAssetsIfRequired('$_gnarkAssetBaseUrl/r1cs.$key');
+  Future<Uint8List?> fetchR1CSAsset(String url) {
+    return _loadAssetsIfRequired(url);
   }
 
-  Future<void> precacheAssets() async {
-    await Future.wait([fetchKeyAsset(), fetchR1CSAsset()]);
+  Future<void> precacheAssets(String keyAssetUrl, String r1csAssetUrl) async {
+    await Future.wait([
+      fetchKeyAsset(keyAssetUrl),
+      fetchR1CSAsset(r1csAssetUrl),
+    ]);
   }
 }
