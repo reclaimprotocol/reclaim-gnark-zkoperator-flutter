@@ -19,7 +19,7 @@ typedef struct { const char *p; ptrdiff_t n; } _GoString_;
 /* Start of preamble from import "C" comments.  */
 
 
-#line 10 "libprove.go"
+#line 11 "libprove.go"
  #include <stdlib.h>
 
 #line 1 "cgo-generated-wrapper"
@@ -88,6 +88,20 @@ struct Prove_return {
 	GoInt r1; /* resLen */
 };
 extern struct Prove_return Prove(GoSlice params);
+
+/* Return type for GenerateOPRFRequestData */
+struct GenerateOPRFRequestData_return {
+	void* r0; /* proofRes */
+	GoInt r1; /* resLen */
+};
+extern struct GenerateOPRFRequestData_return GenerateOPRFRequestData(GoSlice params);
+
+/* Return type for TOPRFFinalize */
+struct TOPRFFinalize_return {
+	void* r0; /* proofRes */
+	GoInt r1; /* resLen */
+};
+extern struct TOPRFFinalize_return TOPRFFinalize(GoSlice params);
 
 #ifdef __cplusplus
 }
