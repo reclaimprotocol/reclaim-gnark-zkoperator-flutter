@@ -29,11 +29,24 @@ final _logger = Logger('reclaim_flutter_sdk.gnarkprover');
 /// whether the initialization was successful.
 final _didInitializeCache = <KeyAlgorithmType, bool>{};
 
+class KeyAlgorithmAssetUrls {
+  final String keyAssetUrl;
+  final String r1csAssetUrl;
+
+  const KeyAlgorithmAssetUrls(this.keyAssetUrl, this.r1csAssetUrl);
+}
+
+typedef KeyAlgorithmAssetUrlsProvider = KeyAlgorithmAssetUrls Function(
+  KeyAlgorithmType algorithm,
+);
+
 /// The main class for interacting with the Gnark prover.
 /// This class provides methods to initialize the prover and compute witness proofs.
 class Gnarkprover {
   /// Initializes the prover by loading the necessary algorithms asynchronously.
-  static Future<void> _initialize() async {
+  static Future<void> initializeAlgorithms(
+    KeyAlgorithmAssetUrlsProvider getAssetUrls,
+  ) async {
     final initAlgorithmWorker = await _InitAlgorithmWorker.spawn();
     try {
       await Future.wait(KeyAlgorithmType.values.map((algorithm) async {
@@ -43,8 +56,11 @@ class Gnarkprover {
         _didInitializeCache[algorithm] = true;
 
         try {
+          final assetUrls = getAssetUrls(algorithm);
           await initAlgorithmWorker.initializeAlgorithm(
             algorithm,
+            assetUrls.keyAssetUrl,
+            assetUrls.r1csAssetUrl,
           );
         } catch (e, s) {
           _logger.severe('Error initializing algorithm $algorithm', e, s);
@@ -70,12 +86,18 @@ class Gnarkprover {
   /// without awaiting the result.
   ///
   /// Running this method more than once is safe.
-  static Future<Gnarkprover> getInstance() async {
+  ///
+  /// To update an algorithm [KeyAlgorithmType]'s key and r1cs assets, you can call
+  /// [Gnarkprover.initializeAlgorithms] and use [Gnarkprover] later when [initializeAlgorithms] completes.
+  static Future<Gnarkprover> getInstance([
+    KeyAlgorithmAssetUrlsProvider getAssetUrls =
+        defaultKeyAlgorithmsAssetUrlsProvider,
+  ]) async {
     if (_completer == null) {
       final completer = Completer<Gnarkprover>();
       _completer = completer;
       try {
-        await _initialize();
+        await initializeAlgorithms(getAssetUrls);
         completer.complete(Gnarkprover._());
       } catch (e, s) {
         // If there's an error, explicitly return the future with an error.
@@ -88,6 +110,15 @@ class Gnarkprover {
       }
     }
     return _completer!.future;
+  }
+
+  static KeyAlgorithmAssetUrls defaultKeyAlgorithmsAssetUrlsProvider(
+    KeyAlgorithmType algorithm,
+  ) {
+    return KeyAlgorithmAssetUrls(
+      algorithm.defaultKeyAssetUrl,
+      algorithm.defaultR1CSAssetUrl,
+    );
   }
 
   Gnarkprover._();
