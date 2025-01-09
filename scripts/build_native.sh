@@ -10,13 +10,6 @@ then
     export GO_GNARKPROVER_DIR="$(pwd)/vendor/gnark-symmetric-crypto/gnark";
 fi
 
-get_timestamp() {
-    date "+%Y%m%d%H%M"
-}
-
-BUILD_BRANCH="build-$(get_timestamp)"
-git checkout -b $BUILD_BRANCH;
-
 ./scripts/build_ios.sh
 ./scripts/build_android.sh
 
@@ -26,6 +19,13 @@ rm -rf $GO_GNARKPROVER_DIR;
 echo "Updating repository with new native libraries";
 
 bash ./scripts/update_version.sh;
+
+get_timestamp() {
+    date "+%Y%m%d%H%M"
+}
+
+BUILD_BRANCH="build-$(get_timestamp)"
+git checkout -b $BUILD_BRANCH;
 
 git add pubspec.yaml;
 

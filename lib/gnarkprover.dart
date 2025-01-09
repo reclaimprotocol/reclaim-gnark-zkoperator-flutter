@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:convert';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
@@ -14,10 +15,13 @@ import 'gnarkprover_bindings_generated.dart';
 export 'assets.dart';
 
 part 'gnarkprover.bindings.dart';
+part 'gnarkprover.bytes.dart';
 part 'gnarkprover.utils.dart';
 
 part 'worker/initialize.dart';
 part 'worker/log.dart';
+part 'worker/oprf/generate_request.dart';
+part 'worker/oprf/finalize.dart';
 part 'worker/prover.dart';
 
 // The logger for gnarkprover package. Using 'reclaim_flutter_sdk' as parent logger name to allow
@@ -139,23 +143,77 @@ class Gnarkprover {
   ///   secret: appSecret,
   ///   context: '',
   ///   parameters: {},
-  ///   // Pass the computeWitnessProof callback to the sdk. This can be optionally used to compute the witness proof externally.
+  ///   // Pass the computeAttestorProof callback to the sdk. This can be optionally used to compute the witness proof externally.
   ///   // For example, we can use the gnark prover to compute the witness proof locally.
-  ///   computeWitnessProof: (type, bytes) async {
+  ///   computeAttestorProof: (type, args) async {
   ///     // Get gnark prover instance and compute the witness proof.
   ///     return (await Gnarkprover.getInstance())
-  ///         .computeWitnessProof(type, bytes);
+  ///         .computeAttestorProof(type, args);
   ///   },
   ///   hideLanding: true,
   /// );
   /// ```
   ///
-  /// Note: Use of `computeWitnessProof` could be disabled by default in the reclaim_flutter_sdk as this is still experimental.
+  /// Note: Use of `computeAttestorProof` could be disabled by default in the reclaim_flutter_sdk as this is still experimental.
   /// Read more about it in reclaim_flutter_sdk's README and reclaim_flutter_sdk/example's README.md.
-  Future<String> computeWitnessProof(String type, Uint8List bytes) async {
+  Future<String> computeAttestorProof(String fnName, List<dynamic> args) async {
+    final String response = await () async {
+      switch (fnName) {
+        case 'groth16Prove':
+          final bytesInput = base64.decode(args[0]['value']);
+          return await groth16Prove(bytesInput);
+        case 'finaliseOPRF':
+          final [serverPublicKey, request, responses] = args;
+          final jsonString = json.encode(
+            _replaceBase64Json({
+              'serverPublicKey': serverPublicKey,
+              'request': request,
+              'responses': responses,
+            }),
+          );
+          final Uint8List bytesInput = utf8.encode(jsonString);
+          final response = await finaliseOPRF(bytesInput);
+          return json.encode(json.decode(response)['output']);
+        case 'generateOPRFRequestData':
+          final [data, domainSeparator] = args;
+          final jsonString = json.encode(
+            _replaceBase64Json({
+              'data': data,
+              'domainSeparator': domainSeparator,
+            }),
+          );
+          final Uint8List bytesInput = utf8.encode(jsonString);
+          final response = await generateOPRFRequestData(bytesInput);
+          return response;
+        default:
+          throw UnimplementedError('Function $fnName not implemented');
+      }
+    }();
+    return _reformatJsonStringForRPC(response);
+  }
+
+  Future<String> groth16Prove(Uint8List bytes) async {
     final proveWorkerFuture = _proveWorkerFuture ??= _ProveWorker.spawn();
     final worker = await proveWorkerFuture;
     return worker.prove(bytes);
+  }
+
+  Future<_TOPRFFinalizeWorker>? _toprfFinalizeWorkerFuture;
+
+  Future<String> finaliseOPRF(Uint8List bytes) async {
+    final workerFuture =
+        _toprfFinalizeWorkerFuture ??= _TOPRFFinalizeWorker.spawn();
+    final worker = await workerFuture;
+    return worker.toprfFinalize(bytes);
+  }
+
+  Future<_GenerateOPRFRequestDataWorker>? _generateOPRFRequestDataWorkerFuture;
+
+  Future<String> generateOPRFRequestData(Uint8List bytes) async {
+    final workerFuture = _generateOPRFRequestDataWorkerFuture ??=
+        _GenerateOPRFRequestDataWorker.spawn();
+    final worker = await workerFuture;
+    return worker.generateOPRFRequestData(bytes);
   }
 
   /// Disposes of the prover by closing the worker.
