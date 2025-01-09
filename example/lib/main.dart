@@ -1,278 +1,378 @@
-import 'dart:async';
+import 'dart:convert';
 
-import 'package:convert/convert.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gnarkprover/gnarkprover.dart';
+import 'package:reclaim_flutter_sdk/attestor_webview.dart';
+import 'package:reclaim_flutter_sdk/logging/data/log.dart';
+import 'package:reclaim_flutter_sdk/logging/logging.dart';
+import 'package:reclaim_flutter_sdk/utils/keys.dart';
+import 'package:uuid/uuid.dart';
 
-import 'package:gnarkprover/gnarkprover.dart' as gnarkprover;
-import 'package:logging/logging.dart';
-
-final logs = <LogRecord>[];
-
-final logger = Logger('gnarkprover_example');
+import 'build_env.dart';
+import 'widgets/progress.dart';
+import 'screen/debug_webview.dart';
 
 void main() {
-  hierarchicalLoggingEnabled = true;
-
-  Logger('').onRecord.listen((entry) {
-    if (!kReleaseMode) {
-      debugPrintThrottled(
-          '${entry.sequenceNumber} [${entry.level}] ${entry.message}');
-    }
-    logs.add(entry);
+  WidgetsFlutterBinding.ensureInitialized();
+  // Setting this to true will print logs from reclaim_flutter_sdk to the console.
+  debugCanPrintLogs = true;
+  initializeReclaimLogging();
+  Gnarkprover.getInstance().then((gnarkProver) {
+    AttestorWebview.instance.computeAttestorProof = gnarkProver.computeAttestorProof;
   });
-  Logger('').level = Level.ALL;
-
-  runApp(const MaterialApp(home: MyApp()));
+  runApp(const MainApp());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class MainApp extends StatelessWidget {
+  const MainApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: TestScreen(),
+    );
+  }
 }
 
-final Uint8List param = _DemoDebugging.fromHexStringToUint8List(
-  '7b22636970686572223a226368616368613230222c226b6579223a5b5b302c302c302c302c302c312c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c315d2c5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d2c5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d2c5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d2c5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d2c5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d2c5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d2c5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d5d2c226e6f6e6365223a5b5b302c302c302c302c302c312c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c315d2c5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d2c5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d5d2c22636f756e746572223a5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c315d2c22696e707574223a5b5b312c302c302c312c312c302c302c312c302c312c302c302c312c302c302c302c312c312c302c302c302c302c312c302c302c302c312c302c302c302c302c315d2c5b312c312c312c302c312c302c312c312c312c302c302c312c302c302c312c302c312c312c312c312c302c312c302c302c302c312c302c312c312c302c312c315d2c5b312c312c312c302c302c302c312c312c302c302c302c302c302c302c312c312c302c312c302c312c302c302c312c312c312c312c302c312c302c312c302c315d2c5b302c312c312c312c312c302c312c312c302c302c312c302c312c312c302c302c302c302c302c302c312c302c312c312c302c312c302c312c302c312c302c315d2c5b302c302c302c302c312c312c312c312c312c312c312c312c312c302c302c302c302c302c312c312c312c302c302c312c312c312c312c302c302c302c312c315d2c5b302c302c312c302c312c302c312c302c312c312c312c302c312c302c312c312c302c312c312c312c302c302c312c312c302c312c312c302c312c302c302c305d2c5b302c302c312c302c312c302c312c302c302c302c312c302c312c302c312c302c302c302c312c302c312c302c312c302c302c302c312c302c312c302c312c305d2c5b302c302c312c302c312c302c312c302c302c302c312c302c312c302c312c302c302c302c312c302c312c302c312c302c302c302c312c302c312c302c312c305d2c5b302c302c312c302c312c302c302c312c302c302c312c302c312c302c312c302c302c302c312c302c312c302c312c302c302c302c312c302c312c302c312c305d2c5b312c312c302c312c312c302c312c302c302c312c312c302c302c302c312c302c312c302c302c302c302c312c312c302c302c312c302c302c302c302c302c305d2c5b312c302c302c312c302c312c302c302c302c312c302c312c302c302c312c302c302c312c302c302c302c312c312c312c302c312c302c312c312c312c312c315d2c5b302c312c302c302c302c312c312c312c302c312c312c302c312c312c312c302c302c302c312c302c312c302c312c312c312c312c302c302c302c302c312c315d2c5b312c302c302c302c312c312c312c302c312c302c312c302c302c302c312c312c312c302c302c302c302c312c302c302c312c312c302c312c312c312c302c315d2c5b302c312c312c312c312c302c302c312c312c312c302c302c302c312c312c302c312c312c312c302c302c312c302c302c312c302c302c312c312c312c312c315d2c5b302c302c312c302c312c312c312c302c302c312c302c312c302c302c302c312c312c312c302c302c302c302c312c312c302c312c312c312c302c302c312c315d2c5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d5d7d',
-);
+class TestScreen extends StatefulWidget {
+  const TestScreen({super.key});
 
-class _MyAppState extends State<MyApp> {
-  Future<String>? proveAsyncResult;
-  gnarkprover.Gnarkprover? prover;
+  @override
+  State<TestScreen> createState() => _TestScreenState();
+}
 
-  void onProveAsyncButtonPressed() async {
-    final p = prover;
-    if (p == null) return;
-    final resultFuture = _DemoDebugging.trackTaskAsync(() {
-      return p.computeWitnessProof('', param);
-    }, 'proveAsync');
+enum ClaimCreationState {
+  idle,
+  creating,
+  created,
+  error,
+}
 
-    setState(() {
-      proveAsyncResult = resultFuture;
-    });
+class _TestScreenState extends State<TestScreen> {
+  String sessionId = '';
 
-    await resultFuture;
+  @override
+  void initState() {
+    super.initState();
+    generateSessionId();
   }
 
-  Future<void> _initializeAlgorithmButton() async {
-    try {
-      lock();
-      prover = await _DemoDebugging.trackTaskAsync(() {
-        // runs on another isolate asynchronously
-        return gnarkprover.Gnarkprover.getInstance();
-      }, 'initializeAlgorithm');
+  void generateSessionId() {
+    final String generatedSessionId = const Uuid().v4().toString();
+    sessionId = generatedSessionId;
+    latestConsumerIdentity = ConsumerIdentity(
+      appId: BuildEnv.APP_ID,
+      sessionId: generatedSessionId,
+      providerId: 'none',
+    );
+    if (mounted) {
       setState(() {
-        // update state
+        //
       });
-    } finally {
-      unlock();
+    }
+  }
+
+  void openAttestorUrlInWebView() {
+    DebugWebviewScreen.open(context,
+        initialUrl: AttestorWebview.instance.attestorUrl);
+  }
+
+  void setup() {
+    logging.level = Level.ALL;
+    AttestorWebview.instance.setAttestorDebugLevel('debug');
+  }
+
+  final TextEditingController textEditingController = TextEditingController(
+    // A claim creation json args can be supplied as an initial json string assigned here to the [text] property to pre-fill the textfield.
+    // Just restart the app to see the effect.
+    text: null,
+  );
+
+  ClaimCreationState claimCreationState = ClaimCreationState.idle;
+
+  void updateState(ClaimCreationState state) {
+    claimCreationState = state;
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  double _proofGenerationProgress = 0;
+
+  void _onClaimCreationUpdate(Map? step) {
+    if (step == null) return;
+    if (step["step"]["name"] != 'witness-progress') return;
+    final info = step['step']['step'];
+    double proofGenerationProgress() {
+      try {
+        final done = info['proofsDone'] ?? 0;
+        final total = info['proofsTotal'] ?? 10;
+        final progress = done / total;
+        return Tween<double>(
+          begin: 0.4,
+          end: 0.9,
+        ).transform(progress);
+      } catch (e, s) {
+        logging.child('ClaimCreationBottomSheetState._onStepChange').severe(
+              'Failed to update progress notifier when step was $step',
+              e,
+              s,
+            );
+        return _proofGenerationProgress;
+      }
     }
 
+    _proofGenerationProgress = switch (info['name']) {
+      'connecting' => 0.1,
+      'sending-request-data' => 0.2,
+      'waiting-for-response' => 0.3,
+      'generating-zk-proofs' => proofGenerationProgress(),
+      'waiting-for-verification' => 1.0,
+      _ => _proofGenerationProgress,
+    };
     if (mounted) {
-      final msg = ScaffoldMessenger.of(context);
+      setState(() {});
+    }
+  }
 
-      msg.removeCurrentSnackBar();
+  void startClaimCreation() async {
+    final logger = logging.child('TestScreen.startClaimCreation');
 
-      msg.showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    final ownerPrivateKey = await getReclaimPrivateKeyOfOwner();
+    final Map<String, dynamic> claimCreationParams = {
+      ...json.decode(textEditingController.text),
+      "sessionId": sessionId,
+      "ownerPrivateKey": ownerPrivateKey,
+      "updateProviderParams": false,
+    };
+    try {
+      updateState(ClaimCreationState.creating);
+      logger.info('Waiting for gnarkprover to initialize');
+      await Gnarkprover.getInstance();
+      logger.info('Gnarkprover initialized');
+
+      final proof = await AttestorWebview.instance.createClaim(
+        claimCreationParams,
+        _onClaimCreationUpdate,
+        options: const CreateClaimOptions(isComputeProofLocalEnabled: true),
+      );
+      logger.info(json.encode({
+        'proof': proof,
+      }));
+      updateState(ClaimCreationState.created);
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Claim created'),
+        ),
+      );
+    } catch (e, s) {
+      logger.severe('Error creating claim', e, s);
+      updateState(ClaimCreationState.error);
+      messenger.showSnackBar(
         SnackBar(
+          backgroundColor: Colors.red,
           content: Text(
-            'Initialization of GnarkProver algorithms was ${prover != null ? 'Successful' : 'Failure'}',
+            'Error creating claim: ${e.toString()}',
+            style: const TextStyle(
+              color: Colors.white,
+            ),
           ),
         ),
       );
     }
   }
 
-  bool _locked = false;
-
-  void lock() {
-    setState(() {
-      _locked = true;
-    });
-  }
-
-  void unlock() {
-    setState(() {
-      _locked = false;
-    });
+  @override
+  void dispose() {
+    textEditingController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    const spacerSmall = SizedBox(height: 10);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gnark Prover Example'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const _LogsViewerScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.bug_report),
-          ),
-        ],
+        title: const Text('Test screen'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(10),
-        children: [
-          const Text(
-            'This can be used to call gnarkprover\'s native functions for gnark prove through FFI that is shipped as source in the package.',
-            style: TextStyle(fontSize: 14),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 25),
-          if (!_locked)
-            FilledButton(
-              onPressed: prover != null ? null : _initializeAlgorithmButton,
-              child: const Text('Initialize Gnarkprover'),
-            )
-          else
-            FilledButton.icon(
-              onPressed: null,
-              icon: const Padding(
-                padding: EdgeInsetsDirectional.only(end: 8.0),
-                child: SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(),
-                ),
+      body: Form(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          children: [
+            const GnarkProverInitStatusTile(),
+            ListTile(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: sessionId));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Session ID copied to clipboard'),
+                  ),
+                );
+              },
+              title: Text(sessionId),
+              subtitle: const Text('Session ID'),
+              trailing: IconButton(
+                onPressed: generateSessionId,
+                icon: const Icon(Icons.refresh),
               ),
-              label: const Text('Initializing Gnarkprover..'),
             ),
-          spacerSmall,
-          FutureBuilder<String>(
-            future: proveAsyncResult,
-            builder: (
-              BuildContext context,
-              AsyncSnapshot<String> value,
-            ) {
-              final displayValue = (value.hasData) ? value.data : 'null';
-              return ListTile(
-                title: Text(
-                    'proveAsync() (status ${value.connectionState.name}) ='),
-                subtitle: SelectableText(displayValue.toString()),
-              );
-            },
-          ),
-          spacerSmall,
-          FutureBuilder<String>(
-            future: proveAsyncResult,
-            builder: (
-              BuildContext context,
-              AsyncSnapshot<String> value,
-            ) {
-              if (value.connectionState == ConnectionState.waiting) {
-                return FilledButton.icon(
-                  onPressed: null,
-                  icon: const Padding(
-                    padding: EdgeInsetsDirectional.only(end: 8.0),
-                    child: SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(),
+            Row(
+              spacing: 4,
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: openAttestorUrlInWebView,
+                    child: const Text(
+                      'Check in Web',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                  label: const Text('Proving...'),
+                ),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: setup,
+                    child: const Text(
+                      'Enable debug logs',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              spacing: 4,
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: pasteArgsInTextFieldFromClipboard,
+                    child: const Text(
+                      'Paste Args',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: clearArgsFromTextField,
+                    child: const Text(
+                      'Clear Args',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            TextFormField(
+              controller: textEditingController,
+              decoration: const InputDecoration(
+                labelText: 'Enter Claim Creation Params in JSON',
+              ),
+              textInputAction: TextInputAction.done,
+              maxLines: 5,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'This field requires a claim creation params as a json string';
+                }
+                try {
+                  json.decode(value);
+                } catch (_) {
+                  return 'The provided value is not a valid JSON';
+                }
+                return null;
+              },
+            ),
+            Builder(
+              builder: (context) {
+                return FilledButton(
+                  onPressed: () {
+                    if (!Form.of(context).validate()) return;
+                    startClaimCreation();
+                  },
+                  child: const Text('Start Claim Creation'),
                 );
-              }
-              return FilledButton(
-                onPressed: prover == null ? null : onProveAsyncButtonPressed,
-                child: const Text('Prove'),
-              );
-            },
-          ),
-          const SizedBox(
-            height: 100,
-          ),
-        ],
+              },
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ClaimStepProgressIndicator(
+                progress: _proofGenerationProgress,
+                color: () {
+                  switch (claimCreationState) {
+                    case ClaimCreationState.creating:
+                      return Colors.blue;
+                    case ClaimCreationState.created:
+                      return Colors.green;
+                    case ClaimCreationState.error:
+                      return Colors.red;
+                    case ClaimCreationState.idle:
+                      return Colors.grey;
+                  }
+                }(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-class _DemoDebugging {
-  static void logEvent(
-    Object? message, {
-    String? tag,
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
-    final label = '[$tag]';
-    logger.info('$label $message', error, stackTrace);
-  }
+  void clearArgsFromTextField() => textEditingController.clear();
 
-  static Future<T> trackTaskAsync<T>(
-    FutureOr<T> Function() task,
-    String debugTag,
-  ) async {
-    try {
-      final start = DateTime.now();
-      logEvent('Operation started ${start.toIso8601String()}', tag: debugTag);
-      final result = await task();
-      final end = DateTime.now();
-      logEvent('Operation end ${end.toIso8601String()}', tag: debugTag);
-      logEvent('Operation elapsed ${end.difference(start)}', tag: debugTag);
-      return result;
-    } catch (e, s) {
-      logEvent('error tracking task', error: e, stackTrace: s, tag: debugTag);
-      rethrow;
-    }
-  }
-
-  static Uint8List fromHexStringToUint8List(String hexString) {
-    final bytes = hex.decode(hexString);
-    return Uint8List.fromList(bytes);
+  void pasteArgsInTextFieldFromClipboard() async {
+    textEditingController.text =
+        (await Clipboard.getData('text/plain'))?.text ?? '';
   }
 }
 
-class _LogsViewerScreen extends StatelessWidget {
-  const _LogsViewerScreen();
+class GnarkProverInitStatusTile extends StatelessWidget {
+  const GnarkProverInitStatusTile({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final lastIndex = logs.length - 1;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Logs'),
-        actions: [
-          OutlinedButton(
-            onPressed: () async {
-              final msg = ScaffoldMessenger.of(context);
-              final text = logs
-                  .map((e) => '${e.sequenceNumber} [${e.level}] ${e.message}')
-                  .join('\n');
-              await Clipboard.setData(
-                ClipboardData(text: text),
-              );
-              msg.showSnackBar(
-                const SnackBar(
-                  content: Text('Logs Copied'),
-                ),
-              );
-            },
-            child: const Text('Copy'),
-          ),
-          const SizedBox(width: 10),
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: logs.length,
-        itemBuilder: (context, index) {
-          // reverse order
-          final log = logs[lastIndex - index];
-          return ExpansionTile(
-            leading: Text(log.sequenceNumber.toString()),
-            title: Text(log.message),
+    return FutureBuilder(
+      future: Gnarkprover.getInstance(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const ListTile(
+            leading: Icon(Icons.error),
+            title: Text(
+              'Failed to initialize Gnark Prover',
+            ),
           );
-        },
-      ),
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const ListTile(
+            leading: SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(),
+            ),
+            title: Text(
+              'Initializing Gnark Prover',
+            ),
+          );
+        }
+        return const ListTile(
+          leading: Icon(Icons.check),
+          title: Text(
+            'GnarkProver initialized',
+          ),
+        );
+      },
     );
   }
 }

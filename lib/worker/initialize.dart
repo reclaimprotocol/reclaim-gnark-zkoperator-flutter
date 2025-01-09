@@ -126,6 +126,18 @@ class _InitAlgorithmWorker {
       _logger.fine(
         'Init complete for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
       );
+      _logger.finest({
+        'func': 'InitAlgorithm',
+        'args': {
+          'algorithm': {
+            'name': algorithm.name,
+            'id': algorithm.id,
+          },
+          'provingKey.length': provingKey.length,
+          'r1cs.length': r1cs.length,
+        },
+        'return': result,
+      });
 
       return result == 1;
     } finally {

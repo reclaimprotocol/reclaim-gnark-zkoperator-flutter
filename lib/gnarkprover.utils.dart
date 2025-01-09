@@ -1,22 +1,64 @@
 part of 'gnarkprover.dart';
 
-extension _GoSliceExtension on GoSlice {
-  static Pointer<GoSlice> fromUint8List(Uint8List bytes) {
-    final Pointer<GoSlice> slice = calloc<GoSlice>();
-    final pointerOfBytes = bytes.allocatePointer();
-    slice.ref.data = pointerOfBytes;
-    slice.ref.len = bytes.length;
-    slice.ref.cap = bytes.length;
-    return slice;
-  }
+final RegExp _base64 = RegExp(
+  r'^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4})$',
+);
+
+/// check if a string is base64 encoded
+bool isBase64(String str) {
+  return _base64.hasMatch(str);
 }
 
-extension _Uint8ListBlobConversion on Uint8List {
-  /// Allocates a pointer filled with the Uint8List data.
-  Pointer<Uint8> allocatePointer() {
-    final blob = calloc<Uint8>(length);
-    final blobBytes = blob.asTypedList(length);
-    blobBytes.setAll(0, this);
-    return blob;
+Object? base64JsonReviver(Object? key, Object? value) {
+  if (value is Map) {
+    final hasStringKeys = value.keys.every((key) => key is String);
+    final hasIntValues = value.values.every((value) => value is int);
+    if (hasStringKeys && hasIntValues) {
+      final bytes = Uint8List(value.length);
+      for (final entry in value.entries) {
+        bytes[int.parse(entry.key)] = entry.value as int;
+      }
+      final base64String = base64.encode(bytes);
+      return {
+        'type': 'uint8array',
+        'value': base64String,
+      };
+    }
   }
+  if (value is String && isBase64(value)) {
+    return {
+      'type': 'uint8array',
+      'value': value,
+    };
+  }
+  return value;
 }
+
+String _reformatJsonStringForRPC(String jsonString) {
+  return json.encode(
+    json.decode(jsonString, reviver: base64JsonReviver),
+  );
+}
+
+Object? _replaceBase64Json(Object? value) {
+  if (value is Map) {
+    if (value['type'] == 'uint8array') {
+      return value['value'];
+    }
+    final newMap = <dynamic, dynamic>{};
+    for (final entry in value.entries) {
+      newMap[entry.key] = _replaceBase64Json(entry.value);
+    }
+    return newMap;
+  }
+  if (value is List) {
+    final newList = <dynamic>[];
+    for (final entry in value) {
+      newList.add(_replaceBase64Json(entry));
+    }
+    return newList;
+  }
+
+  return value;
+}
+

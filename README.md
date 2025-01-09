@@ -72,13 +72,13 @@ class Example extends StatelessWidget {
         secret: appSecret, // your secret token of your application from the dev tool
         context: '', // your claim context
         parameters: { /* ... */ }, // parameters to pre-inject in the provider response selections
-        // Pass the computeWitnessProof callback to the sdk. This can be optionally used to compute the witness proof externally.
+        // Pass the computeAttestorProof callback to the sdk. This can be optionally used to compute the witness proof externally.
         // For example, we can use the gnark prover to compute the witness proof locally.
         // Note: This is an optional parameter. And use of this parameter is disabled by default. To enable, invoke `setComputeProofLocal(true)`
-        computeWitnessProof: (type, bytes) async {
+        computeAttestorProof: (type, args) async {
           // Get gnark prover instance and compute the witness proof.
           return (await Gnarkprover.getInstance())
-              .computeWitnessProof(type, bytes);
+              .computeAttestorProof(type, args);
         },
         hideLanding: true,
       );
