@@ -9,7 +9,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:gnarkprover/assets.dart';
 import 'package:logging/logging.dart';
-import 'package:mutex/mutex.dart';
 
 import 'gnarkprover_bindings_generated.dart';
 

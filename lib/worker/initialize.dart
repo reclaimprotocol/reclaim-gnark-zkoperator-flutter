@@ -1,7 +1,5 @@
 part of '../gnarkprover.dart';
 
-final _initializeAlgorithmMutex = Mutex();
-
 class _InitAlgorithmWorker {
   final SendPort _commands;
   final ReceivePort _responses;
@@ -117,7 +115,6 @@ class _InitAlgorithmWorker {
     Pointer<GoSlice>? provingKeyPointer;
     Pointer<GoSlice>? r1csPointer;
     try {
-      await _initializeAlgorithmMutex.acquire();
       provingKeyPointer = _GoSliceExtension.fromUint8List(provingKey);
       r1csPointer = _GoSliceExtension.fromUint8List(r1cs);
 
@@ -149,7 +146,6 @@ class _InitAlgorithmWorker {
 
       return result == 1;
     } finally {
-      _initializeAlgorithmMutex.release();
       if (provingKeyPointer != null) {
         calloc.free(provingKeyPointer.ref.data);
         calloc.free(provingKeyPointer);
