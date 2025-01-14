@@ -83,7 +83,7 @@ class _InitAlgorithmWorker {
       final now = DateTime.now();
       _logger.fine('Downloading key asset for ${algorithm.name}');
       final asset = await algorithm.fetchKeyAsset(keyAssetUrl);
-      _logger.fine(
+      _logger.info(
         'Downloaded key asset for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
       );
       return asset;
@@ -92,7 +92,7 @@ class _InitAlgorithmWorker {
       final now = DateTime.now();
       _logger.fine('Downloading r1cs asset for ${algorithm.name}');
       final asset = await algorithm.fetchR1CSAsset(r1csAssetUrl);
-      _logger.fine(
+      _logger.info(
         'Downloaded r1cs asset for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
       );
       return asset;
@@ -104,7 +104,7 @@ class _InitAlgorithmWorker {
     final r1cs = await r1csFuture;
 
     if (provingKey == null || r1cs == null) {
-      _logger.fine({
+      _logger.warning({
         'reason': 'Failed to download key or r1cs for ${algorithm.name}',
         'provingKey.length': provingKey?.length,
         'r1cs.length': r1cs?.length,
@@ -128,7 +128,7 @@ class _InitAlgorithmWorker {
         r1csPointer.ref,
       );
 
-      _logger.fine(
+      _logger.info(
         'Init complete for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
       );
       _logger.finest({

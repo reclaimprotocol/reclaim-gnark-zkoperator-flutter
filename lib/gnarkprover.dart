@@ -49,11 +49,12 @@ typedef KeyAlgorithmAssetUrlsProvider = KeyAlgorithmAssetUrls Function(
 class Gnarkprover {
   /// Initializes the prover by loading the necessary algorithms asynchronously.
   static Future<void> initializeAlgorithms(
+    List<KeyAlgorithmType> algorithms,
     KeyAlgorithmAssetUrlsProvider getAssetUrls,
   ) async {
     final initAlgorithmWorker = await _InitAlgorithmWorker.spawn();
     try {
-      await Future.wait(KeyAlgorithmType.values.map((algorithm) async {
+      await Future.wait(algorithms.map((algorithm) async {
         // Skip initialization for algorithms where last initialization was successful
         if (_didInitializeCache[algorithm] == true) return true;
         // just locking the cache to prevent duplicate initialization
@@ -75,6 +76,28 @@ class Gnarkprover {
     } finally {
       initAlgorithmWorker.close();
     }
+  }
+
+  static Completer<void>? _oprfInitializedCompleter;
+
+  Future<void> _ensureOprfInitialized() async {
+    if (_oprfInitializedCompleter == null) {
+      final completer = Completer<void>();
+      _oprfInitializedCompleter = completer;
+      try {
+        await initializeAlgorithms(KeyAlgorithmType.oprf, getAssetUrls);
+        completer.complete();
+      } catch (e, s) {
+        // If there's an error, explicitly return the future with an error.
+        // then set the completer to null so we can retry.
+        completer.completeError(e);
+        final Future<void> gnarkProverFuture = completer.future;
+        _oprfInitializedCompleter = null;
+        _logger.severe('Error initializing OPRF in Gnark prover', e, s);
+        return gnarkProverFuture;
+      }
+    }
+    return await _oprfInitializedCompleter!.future;
   }
 
   static Completer<Gnarkprover>? _completer;
@@ -101,8 +124,10 @@ class Gnarkprover {
       final completer = Completer<Gnarkprover>();
       _completer = completer;
       try {
-        await initializeAlgorithms(getAssetUrls);
-        completer.complete(Gnarkprover._());
+        await initializeAlgorithms(KeyAlgorithmType.nonOprf, getAssetUrls);
+        final prover = Gnarkprover._(getAssetUrls);
+        completer.complete(prover);
+        _unawaited(prover._ensureOprfInitialized());
       } catch (e, s) {
         // If there's an error, explicitly return the future with an error.
         // then set the completer to null so we can retry.
@@ -125,7 +150,9 @@ class Gnarkprover {
     );
   }
 
-  Gnarkprover._();
+  final KeyAlgorithmAssetUrlsProvider getAssetUrls;
+
+  Gnarkprover._(this.getAssetUrls);
 
   Future<_ProveWorker>? _proveWorkerFuture;
 
@@ -163,6 +190,7 @@ class Gnarkprover {
           final bytesInput = base64.decode(args[0]['value']);
           return await groth16Prove(bytesInput);
         case 'finaliseOPRF':
+          await _ensureOprfInitialized();
           final [serverPublicKey, request, responses] = args;
           final jsonString = json.encode(
             _replaceBase64Json({
@@ -175,6 +203,7 @@ class Gnarkprover {
           final response = await finaliseOPRF(bytesInput);
           return json.encode(json.decode(response)['output']);
         case 'generateOPRFRequestData':
+          await _ensureOprfInitialized();
           final [data, domainSeparator] = args;
           final jsonString = json.encode(
             _replaceBase64Json({
@@ -226,3 +255,5 @@ class Gnarkprover {
     }
   }
 }
+
+void _unawaited(Future<void>? f) {}

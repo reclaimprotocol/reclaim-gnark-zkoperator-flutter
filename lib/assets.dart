@@ -24,6 +24,18 @@ enum KeyAlgorithmType {
   AES_128_OPRF(4, 'aes128_oprf'),
   AES_256_OPRF(5, 'aes256_oprf');
 
+  static const List<KeyAlgorithmType> oprf = [
+    CHACHA20_OPRF,
+    AES_128_OPRF,
+    AES_256_OPRF,
+  ];
+
+  static const List<KeyAlgorithmType> nonOprf = [
+    CHACHA20,
+    AES_128,
+    AES_256,
+  ];
+
   final int id;
   final String key;
 
