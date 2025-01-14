@@ -6,6 +6,7 @@ import 'package:gnarkprover/gnarkprover.dart';
 import 'package:reclaim_flutter_sdk/attestor_webview.dart';
 import 'package:reclaim_flutter_sdk/logging/data/log.dart';
 import 'package:reclaim_flutter_sdk/logging/logging.dart';
+import 'package:reclaim_flutter_sdk/reclaim_flutter_sdk.dart';
 import 'package:reclaim_flutter_sdk/utils/keys.dart';
 import 'package:uuid/uuid.dart';
 
@@ -19,7 +20,9 @@ void main() {
   debugCanPrintLogs = true;
   initializeReclaimLogging();
   Gnarkprover.getInstance().then((gnarkProver) {
-    AttestorWebview.instance.computeAttestorProof = gnarkProver.computeAttestorProof;
+    Attestor.instance.computeAttestorProof = gnarkProver.computeAttestorProof;
+    AttestorWebview.instance.computeAttestorProof =
+        gnarkProver.computeAttestorProof;
   });
   runApp(const MainApp());
 }
@@ -80,6 +83,7 @@ class _TestScreenState extends State<TestScreen> {
 
   void setup() {
     logging.level = Level.ALL;
+    Attestor.instance.setAttestorDebugLevel('debug');
     AttestorWebview.instance.setAttestorDebugLevel('debug');
   }
 
@@ -153,7 +157,7 @@ class _TestScreenState extends State<TestScreen> {
       await Gnarkprover.getInstance();
       logger.info('Gnarkprover initialized');
 
-      final proof = await AttestorWebview.instance.createClaim(
+      final proof = await Attestor.instance.createClaim(
         claimCreationParams,
         _onClaimCreationUpdate,
         options: const CreateClaimOptions(isComputeProofLocalEnabled: true),

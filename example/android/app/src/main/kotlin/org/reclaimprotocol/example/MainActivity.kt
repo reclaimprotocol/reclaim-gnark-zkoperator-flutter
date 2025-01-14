@@ -1,4 +1,4 @@
-package com.example.gnarkprover_example
+package org.reclaimprotocol.example
 
 import io.flutter.embedding.android.FlutterActivity
 
