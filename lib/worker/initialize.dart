@@ -43,9 +43,10 @@ class _InitAlgorithmWorker {
     };
     // Spawn the isolate.
     try {
+      final rootToken = RootIsolateToken.instance!;
       await Isolate.spawn(
         _startRemoteIsolate,
-        (initPort.sendPort),
+        (rootToken, initPort.sendPort),
         debugName: _debugLabel,
       );
     } on Object {
@@ -104,7 +105,14 @@ class _InitAlgorithmWorker {
     final provingKey = await provingKeyFuture;
     final r1cs = await r1csFuture;
 
-    if (provingKey == null || r1cs == null) return false;
+    if (provingKey == null || r1cs == null) {
+      _logger.fine({
+        'reason': 'Failed to download key or r1cs for ${algorithm.name}',
+        'provingKey.length': provingKey?.length,
+        'r1cs.length': r1cs?.length,
+      });
+      return false;
+    }
 
     Pointer<GoSlice>? provingKeyPointer;
     Pointer<GoSlice>? r1csPointer;
@@ -186,7 +194,9 @@ class _InitAlgorithmWorker {
     });
   }
 
-  static void _startRemoteIsolate(SendPort sendPort) {
+  static void _startRemoteIsolate((RootIsolateToken, SendPort) args) {
+    final (rootToken, sendPort) = args;
+    BackgroundIsolateBinaryMessenger.ensureInitialized(rootToken);
     final receivePort = ReceivePort(_debugLabel);
     sendPort.send(receivePort.sendPort);
     _LogRecordIsolateMessage.setup(sendPort.send);

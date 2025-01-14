@@ -16,6 +16,20 @@ class _LogRecordIsolateMessage {
   });
 
   static void log(_LogRecordIsolateMessage data, [String? debugLabel = '']) {
+    if (kDebugMode) {
+      print(json.encode({
+        'loggerName': data.loggerName,
+        'level': "${data.level.name} (${data.level.value})",
+        'debugLabel': debugLabel,
+        'message': data.message.toString(),
+        'error': data.error?.toString(),
+        'stackTrace': data.error != null ? data.stackTrace.toString() : null,
+        'isolate': {
+          'name': Isolate.current.debugName,
+          'id': Isolate.current.hashCode,
+        },
+      }));
+    }
     Logger(data.loggerName).log(
       data.level,
       '($debugLabel) ${data.message}',

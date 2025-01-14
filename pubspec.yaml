@@ -18,6 +18,8 @@ dependencies:
   plugin_platform_interface: ^2.0.0
   logging: ^1.0.0
   dio_smart_retry: '>=6.0.0 <8.0.0'
+  path_provider: ^2.0.0
+  path: ^1.9.0
 
 dev_dependencies:
   ffigen: ^16.0.0
