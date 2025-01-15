@@ -16,7 +16,7 @@ final _clientInstanceFuture = () async {
   if (Platform.isIOS) {
     dio.httpClientAdapter = NativeAdapter(
       createCupertinoConfiguration: () {
-        return URLSessionConfiguration.ephemeralSessionConfiguration();
+        return URLSessionConfiguration.defaultSessionConfiguration();
       },
     );
   } else if (Platform.isAndroid) {

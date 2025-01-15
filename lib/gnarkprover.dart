@@ -80,12 +80,27 @@ class Gnarkprover {
 
   static Completer<void>? _oprfInitializedCompleter;
 
-  Future<void> _ensureOprfInitialized() async {
+  /// Ensures that the OPRF is initialized.
+  ///
+  /// This method is used to ensure that the OPRF is initialized before any OPRF operations are performed.
+  /// It will initialize the OPRF if it has not already been initialized.
+  /// If the OPRF is already initialized, it will return immediately.
+  /// If the OPRF is not initialized, it will initialize the OPRF and return a future that completes when the OPRF is initialized.
+  /// If there is an error during initialization, it will return a future that completes with an error.
+  Future<void> ensureOprfInitialized() async {
     if (_oprfInitializedCompleter == null) {
       final completer = Completer<void>();
       _oprfInitializedCompleter = completer;
       try {
+        final log =
+            Logger('reclaim_flutter_sdk.gnarkprover.ensureOprfInitialized');
+        final start = DateTime.now();
         await initializeAlgorithms(KeyAlgorithmType.oprf, getAssetUrls);
+        final end = DateTime.now();
+        final diff = end.difference(start);
+        log.info(
+          'Initialized Gnark Prover (oprf) in ${diff.inMilliseconds} ms or ${diff.inSeconds} s',
+        );
         completer.complete();
       } catch (e, s) {
         // If there's an error, explicitly return the future with an error.
@@ -124,10 +139,39 @@ class Gnarkprover {
       final completer = Completer<Gnarkprover>();
       _completer = completer;
       try {
-        await initializeAlgorithms(KeyAlgorithmType.nonOprf, getAssetUrls);
+        final log = Logger('reclaim_flutter_sdk.gnarkprover.getInstance');
+        final start = DateTime.now();
+        // start initializing non-oprf algorithms but will wait later
+        final nonOprfInitFuture = initializeAlgorithms(
+          KeyAlgorithmType.nonOprf,
+          getAssetUrls,
+        );
         final prover = Gnarkprover._(getAssetUrls);
+
+        // wait for non-oprf algorithms to initialize
+        await nonOprfInitFuture;
+        final end = DateTime.now();
+        final diff = end.difference(start);
+        log.info(
+          'Initialized Gnark Prover (non-oprf) in ${diff.inMilliseconds} ms or ${diff.inSeconds} s',
+        );
+        // start initializing oprf algorithm but don't wait for it to complete in this method
+        // intention for doing this: Most providers don't use oprf.
+        _unawaited(Future.wait([
+          // This here is not needed (already awaited above)
+          // Just keeping it here to help with refactoring later
+          // Doing this shouldn't affect program.
+          nonOprfInitFuture,
+          prover.ensureOprfInitialized(),
+        ]).then((_) {
+          final end = DateTime.now();
+          final diff = end.difference(start);
+          log.info(
+            'Initialized Gnark Prover in ${diff.inMilliseconds} ms or ${diff.inSeconds} s',
+          );
+        }));
+
         completer.complete(prover);
-        _unawaited(prover._ensureOprfInitialized());
       } catch (e, s) {
         // If there's an error, explicitly return the future with an error.
         // then set the completer to null so we can retry.
@@ -190,7 +234,7 @@ class Gnarkprover {
           final bytesInput = base64.decode(args[0]['value']);
           return await groth16Prove(bytesInput);
         case 'finaliseOPRF':
-          await _ensureOprfInitialized();
+          await ensureOprfInitialized();
           final [serverPublicKey, request, responses] = args;
           final jsonString = json.encode(
             _replaceBase64Json({
@@ -203,7 +247,7 @@ class Gnarkprover {
           final response = await finaliseOPRF(bytesInput);
           return json.encode(json.decode(response)['output']);
         case 'generateOPRFRequestData':
-          await _ensureOprfInitialized();
+          await ensureOprfInitialized();
           final [data, domainSeparator] = args;
           final jsonString = json.encode(
             _replaceBase64Json({
