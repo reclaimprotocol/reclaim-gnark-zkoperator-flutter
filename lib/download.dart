@@ -29,9 +29,6 @@ final _clientInstanceFuture = () async {
       recursive: true,
     );
     dio.httpClientAdapter = NativeAdapter(
-      createCupertinoConfiguration: () {
-        return URLSessionConfiguration.ephemeralSessionConfiguration();
-      },
       createCronetEngine: () {
         return CronetEngine.build(
           cacheMode: CacheMode.disk,
