@@ -10,8 +10,7 @@ then
     export GO_GNARKPROVER_DIR="$(pwd)/vendor/gnark-symmetric-crypto/gnark";
 fi
 
-./scripts/build_ios.sh
-./scripts/build_android.sh
+./scripts/build_lib.sh
 
 # cleanup
 rm -rf $GO_GNARKPROVER_DIR;

@@ -7,22 +7,22 @@ import 'dart:convert';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:gnarkprover/assets.dart';
+import 'package:gnarkprover/src/assets.dart';
 import 'package:logging/logging.dart';
 
-import 'gnarkprover_bindings_generated.dart';
+import 'src/generated_bindings.dart';
 
-export 'assets.dart';
+export 'src/assets.dart';
 
-part 'gnarkprover.bindings.dart';
-part 'gnarkprover.bytes.dart';
-part 'gnarkprover.utils.dart';
+part 'src/part/bindings.dart';
+part 'src/part/bytes.dart';
+part 'src/part/json.dart';
 
-part 'worker/initialize.dart';
-part 'worker/log.dart';
-part 'worker/oprf/generate_request.dart';
-part 'worker/oprf/finalize.dart';
-part 'worker/prover.dart';
+part 'src/worker/initialize.dart';
+part 'src/worker/log.dart';
+part 'src/worker/oprf/generate_request.dart';
+part 'src/worker/oprf/finalize.dart';
+part 'src/worker/prover.dart';
 
 // The logger for gnarkprover package. Using 'reclaim_flutter_sdk' as parent logger name to allow
 // logs from this package to be listened from reclaim_flutter_sdk if sdk is filtering sdk only logs under reclaim_flutter_sdk.
