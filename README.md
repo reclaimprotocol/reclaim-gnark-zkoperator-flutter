@@ -1,27 +1,23 @@
-# gnarkprover
+# reclaim_gnark_zkoperator
 
-Reclaim Protocol's library for creating Gnark Proof. This can be optionally used in [Reclaim's Flutter SDK](https://gitlab.reclaimprotocol.org/integrations/offchain/reclaim_flutter_sdk.git) for creating proof with gnark.
+Reclaim Protocol's implementation of Zero-Knowledge (ZK) SNARK Operator powered by a Gnark Prover library for creating ZK-SNARK Proofs.
 
 ## Getting Started
 
-### Use this package with the reclaim_flutter_sdk
-
-You can use the reclaim flutter sdk with the experimental gnark prover to compute the witness proof *faster* locally.
-
-#### Add the `gnarkprover` dependency
+#### Add the `reclaim_gnark_zkoperator` dependency
 
 Run this command:
 
 With Flutter:
 ```sh
- $ flutter pub add gnarkprover
+ $ flutter pub add reclaim_gnark_zkoperator
 ```
 
 This will add a line like this to your package's pubspec.yaml (and run an implicit flutter pub get):
 
 ```yaml
 dependencies:
-  gnarkprover: ^0.1.0
+  reclaim_gnark_zkoperator: ^1.0.0
 ```
 
 #### Import it
@@ -29,17 +25,17 @@ dependencies:
 Now in your Dart code, you can use:
 
 ```dart
-import 'package:gnarkprover/gnarkprover.dart';
+import 'package:reclaim_gnark_zkoperator/reclaim_gnark_zkoperator.dart';
 ```
 
-#### Example of using the reclaim flutter sdk with gnark prover
+#### Example of using the reclaim flutter sdk with this ZK Operator library
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:reclaim_flutter_sdk/reclaim_flutter_sdk.dart';
 
 // An optional dependency that can be used with reclaim_flutter_sdk to compute the witness proof locally.
-import 'package:gnarkprover/gnarkprover.dart';
+import 'package:reclaim_gnark_zkoperator/reclaim_gnark_zkoperator.dart';
 
 const String appId = 'YOUR_APPLICATION_ID_HERE';
 const String appSecret = 'YOUR_APP_SECRET_HERE';
@@ -57,10 +53,10 @@ class Example extends StatelessWidget {
   void onStartClaimWithGnarkProverButtonPressed(BuildContext context) async {
     final msg = ScaffoldMessenger.of(context);
     try {
-      // Getting the Gnark prover instance to initialize in advance before usage because initialization can take time.
+      // Getting the Reclaim ZK Operator instance to initialize in advance before usage because initialization can take time.
       // This can also be done in the `main` function.
       // Calling this more than once is safe.
-      Gnarkprover.getInstance();
+      ReclaimZkOperator.getInstance();
 
       // Enable the use of the local prover in the reclaim SDK (because it is disabled by default).
       setComputeProofLocal(true);
@@ -73,12 +69,12 @@ class Example extends StatelessWidget {
         context: '', // your claim context
         parameters: { /* ... */ }, // parameters to pre-inject in the provider response selections
         // Pass the computeAttestorProof callback to the sdk. This can be optionally used to compute the witness proof externally.
-        // For example, we can use the gnark prover to compute the witness proof locally.
+        // For example, we can use the Reclaim ZK Operator to compute the witness proof locally.
         // Note: This is an optional parameter. And use of this parameter is disabled by default. To enable, invoke `setComputeProofLocal(true)`
-        computeAttestorProof: (type, args) async {
-          // Get gnark prover instance and compute the witness proof.
-          return (await Gnarkprover.getInstance())
-              .computeAttestorProof(type, args);
+        computeAttestorProof: (fnName, args) async {
+          // Get Reclaim ZK Operator instance and compute the witness proof.
+          return (await ReclaimZkOperator.getInstance())
+              .computeAttestorProof(fnName, args);
         },
         hideLanding: true,
       );
@@ -134,7 +130,7 @@ class Example extends StatelessWidget {
 #### Try the Reclaim's Flutter SDK Example
 
 1. Try the example from [Reclaim's Flutter SDK Example](https://gitlab.reclaimprotocol.org/integrations/offchain/reclaim_flutter_sdk/-/tree/main/example).
-2. This example uses `gnarkprover` package to compute witness proof locally. This is optional and `reclaim_flutter_sdk` can be used without it.
+2. This example uses `reclaim_gnark_zkoperator` package to compute witness proof locally. This is optional and `reclaim_flutter_sdk` can be used without it.
 3. To run the example, follow the instructions in the [Reclaim's Flutter SDK Example README](https://gitlab.reclaimprotocol.org/integrations/offchain/reclaim_flutter_sdk/-/blob/main/example/README.md).
 
 ## Project structure
@@ -193,7 +189,7 @@ The native build systems that are invoked by FFI (and method channel) plugins ar
 * For Android: Gradle, which invokes the Android NDK for native builds.
   * See the documentation in android/build.gradle.
 * For iOS: Xcode, via CocoaPods.
-  * See the documentation in ios/gnarkprover.podspec.
+  * See the documentation in ios/reclaim_gnark_zkoperator.podspec.
 
 ### Buidling native binaries
 

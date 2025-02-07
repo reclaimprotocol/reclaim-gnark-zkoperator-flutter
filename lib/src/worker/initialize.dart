@@ -1,4 +1,4 @@
-part of '../../gnarkprover.dart';
+part of '../../reclaim_gnark_zkoperator.dart';
 
 class _InitAlgorithmWorker {
   final SendPort _commands;

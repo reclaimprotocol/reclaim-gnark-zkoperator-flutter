@@ -1,4 +1,4 @@
-part of '../../gnarkprover.dart';
+part of '../../reclaim_gnark_zkoperator.dart';
 
 extension _GoSliceExtension on GoSlice {
   static Pointer<GoSlice> fromUint8List(Uint8List bytes) {

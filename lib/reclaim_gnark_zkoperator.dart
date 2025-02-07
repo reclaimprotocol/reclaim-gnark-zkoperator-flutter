@@ -7,12 +7,14 @@ import 'dart:convert';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:gnarkprover/src/assets.dart';
 import 'package:logging/logging.dart';
 
+import 'src/assets.dart';
 import 'src/generated_bindings.dart';
+import 'src/zk_operator.dart';
 
 export 'src/assets.dart';
+export 'src/zk_operator.dart';
 
 part 'src/part/bindings.dart';
 part 'src/part/bytes.dart';
@@ -24,9 +26,9 @@ part 'src/worker/oprf/generate_request.dart';
 part 'src/worker/oprf/finalize.dart';
 part 'src/worker/prover.dart';
 
-// The logger for gnarkprover package. Using 'reclaim_flutter_sdk' as parent logger name to allow
+// The logger for reclaim_gnark_zkoperator package. Using 'reclaim_flutter_sdk' as parent logger name to allow
 // logs from this package to be listened from reclaim_flutter_sdk if sdk is filtering sdk only logs under reclaim_flutter_sdk.
-final _logger = Logger('reclaim_flutter_sdk.gnarkprover');
+final _logger = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator');
 
 /// A cache to store the initialization status of different key algorithm types.
 /// The key is the [KeyAlgorithmType] and the value is a boolean indicating
@@ -44,9 +46,13 @@ typedef KeyAlgorithmAssetUrlsProvider = KeyAlgorithmAssetUrls Function(
   KeyAlgorithmType algorithm,
 );
 
-/// The main class for interacting with the Gnark prover.
+/// {@macro reclaim_gnark_zkoperator.ZkOperator}
+///
+/// The main class for interacting with the Gnark prover and Reclaim Attestor Browser RPC.
 /// This class provides methods to initialize the prover and compute witness proofs.
-class Gnarkprover {
+///
+/// This class extends [ZkOperator] and implements the methods defined in the [ZkOperator] interface.
+class ReclaimZkOperator extends ZkOperator {
   /// Initializes the prover by loading the necessary algorithms asynchronously.
   static Future<void> initializeAlgorithms(
     List<KeyAlgorithmType> algorithms,
@@ -93,7 +99,7 @@ class Gnarkprover {
       _oprfInitializedCompleter = completer;
       try {
         final log =
-            Logger('reclaim_flutter_sdk.gnarkprover.ensureOprfInitialized');
+            Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.ensureOprfInitialized');
         final start = DateTime.now();
         await initializeAlgorithms(KeyAlgorithmType.oprf, getAssetUrls);
         final end = DateTime.now();
@@ -115,9 +121,9 @@ class Gnarkprover {
     return await _oprfInitializedCompleter!.future;
   }
 
-  static Completer<Gnarkprover>? _completer;
+  static Completer<ReclaimZkOperator>? _completer;
 
-  /// Returns a singleton instance of [Gnarkprover].
+  /// Returns a singleton instance of [ReclaimZkOperator].
   ///
   /// If the instance is not yet created, it creates a new one and initializes it.
   /// Running this for the first time will initialize the prover, and this initialization
@@ -130,23 +136,23 @@ class Gnarkprover {
   /// Running this method more than once is safe.
   ///
   /// To update an algorithm [KeyAlgorithmType]'s key and r1cs assets, you can call
-  /// [Gnarkprover.initializeAlgorithms] and use [Gnarkprover] later when [initializeAlgorithms] completes.
-  static Future<Gnarkprover> getInstance([
+  /// [ReclaimZkOperator.initializeAlgorithms] and use [ReclaimZkOperator] later when [initializeAlgorithms] completes.
+  static Future<ReclaimZkOperator> getInstance([
     KeyAlgorithmAssetUrlsProvider getAssetUrls =
         defaultKeyAlgorithmsAssetUrlsProvider,
   ]) async {
     if (_completer == null) {
-      final completer = Completer<Gnarkprover>();
+      final completer = Completer<ReclaimZkOperator>();
       _completer = completer;
       try {
-        final log = Logger('reclaim_flutter_sdk.gnarkprover.getInstance');
+        final log = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.getInstance');
         final start = DateTime.now();
         // start initializing non-oprf algorithms but will wait later
         final nonOprfInitFuture = initializeAlgorithms(
           KeyAlgorithmType.nonOprf,
           getAssetUrls,
         );
-        final prover = Gnarkprover._(getAssetUrls);
+        final prover = ReclaimZkOperator._(getAssetUrls);
 
         // wait for non-oprf algorithms to initialize
         await nonOprfInitFuture;
@@ -176,7 +182,7 @@ class Gnarkprover {
         // If there's an error, explicitly return the future with an error.
         // then set the completer to null so we can retry.
         completer.completeError(e);
-        final Future<Gnarkprover> gnarkProverFuture = completer.future;
+        final Future<ReclaimZkOperator> gnarkProverFuture = completer.future;
         _completer = null;
         _logger.severe('Error initializing Gnark prover', e, s);
         return gnarkProverFuture;
@@ -196,14 +202,14 @@ class Gnarkprover {
 
   final KeyAlgorithmAssetUrlsProvider getAssetUrls;
 
-  Gnarkprover._(this.getAssetUrls);
+  ReclaimZkOperator._(this.getAssetUrls);
 
   Future<_ProveWorker>? _proveWorkerFuture;
 
   /// Computes the witness proof for the given bytes.
   ///
-  /// The `type` parameter should be one of the key algorithm types supported by the prover.
-  /// The `bytes` parameter should be the data in bytes received from the witness to be proven.
+  /// The `fnName` parameter should be the name of the zk or oprf functions supported by the prover.
+  /// The `args` parameter should be the arguments for the function.
   ///
   /// When using this with `reclaim_flutter_sdk`, this function can be utilized as follows when creating a ReclaimVerification object:
   /// ```dart
@@ -215,11 +221,11 @@ class Gnarkprover {
   ///   context: '',
   ///   parameters: {},
   ///   // Pass the computeAttestorProof callback to the sdk. This can be optionally used to compute the witness proof externally.
-  ///   // For example, we can use the gnark prover to compute the witness proof locally.
-  ///   computeAttestorProof: (type, args) async {
-  ///     // Get gnark prover instance and compute the witness proof.
-  ///     return (await Gnarkprover.getInstance())
-  ///         .computeAttestorProof(type, args);
+  ///   // For example, we can use the Reclaim ZK Operator to compute the witness proof locally.
+  ///   computeAttestorProof: (fnName, args) async {
+  ///     // Get Reclaim ZK Operator instance and compute the witness proof.
+  ///     return (await ReclaimZkOperator.getInstance())
+  ///         .computeAttestorProof(fnName, args);
   ///   },
   ///   hideLanding: true,
   /// );
@@ -227,6 +233,7 @@ class Gnarkprover {
   ///
   /// Note: Use of `computeAttestorProof` could be disabled by default in the reclaim_flutter_sdk as this is still experimental.
   /// Read more about it in reclaim_flutter_sdk's README and reclaim_flutter_sdk/example's README.md.
+  @override
   Future<String> computeAttestorProof(String fnName, List<dynamic> args) async {
     final String response = await () async {
       switch (fnName) {
@@ -265,6 +272,7 @@ class Gnarkprover {
     return _reformatJsonStringForRPC(response);
   }
 
+  @override
   Future<String> groth16Prove(Uint8List bytes) async {
     final proveWorkerFuture = _proveWorkerFuture ??= _ProveWorker.spawn();
     final worker = await proveWorkerFuture;
@@ -273,6 +281,7 @@ class Gnarkprover {
 
   Future<_TOPRFFinalizeWorker>? _toprfFinalizeWorkerFuture;
 
+  @override
   Future<String> finaliseOPRF(Uint8List bytes) async {
     final workerFuture =
         _toprfFinalizeWorkerFuture ??= _TOPRFFinalizeWorker.spawn();
@@ -282,6 +291,7 @@ class Gnarkprover {
 
   Future<_GenerateOPRFRequestDataWorker>? _generateOPRFRequestDataWorkerFuture;
 
+  @override
   Future<String> generateOPRFRequestData(Uint8List bytes) async {
     final workerFuture = _generateOPRFRequestDataWorkerFuture ??=
         _GenerateOPRFRequestDataWorker.spawn();
@@ -289,9 +299,7 @@ class Gnarkprover {
     return worker.generateOPRFRequestData(bytes);
   }
 
-  /// Disposes of the prover by closing the worker.
-  ///
-  /// This method should be called when the prover is no longer needed to free up resources.
+  @override
   Future<void> close() async {
     final proverWorkerFuture = _proveWorkerFuture;
     if (proverWorkerFuture != null) {

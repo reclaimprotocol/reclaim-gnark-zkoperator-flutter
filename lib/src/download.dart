@@ -11,7 +11,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 
 final _clientInstanceFuture = () async {
   final logger =
-      Logger('reclaim_flutter_sdk.gnarkprover._client.RetryInterceptor');
+      Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator._client.RetryInterceptor');
   final dio = Dio();
   if (Platform.isIOS) {
     dio.httpClientAdapter = NativeAdapter(

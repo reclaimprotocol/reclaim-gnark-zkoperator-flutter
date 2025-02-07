@@ -1,4 +1,4 @@
-part of '../../gnarkprover.dart';
+part of '../../reclaim_gnark_zkoperator.dart';
 
 final RegExp _base64 = RegExp(
   r'^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4})$',

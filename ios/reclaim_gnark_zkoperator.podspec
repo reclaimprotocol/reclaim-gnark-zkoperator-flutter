@@ -1,10 +1,10 @@
 #
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html.
-# Run `pod lib lint gnarkprover.podspec` to validate before publishing.
+# Run `pod lib lint reclaim_gnark_zkoperator.podspec` to validate before publishing.
 #
 Pod::Spec.new do |s|
-  s.name             = 'gnarkprover'
-  s.version          = '0.1.0'
+  s.name             = 'reclaim_gnark_zkoperator'
+  s.version          = '1.0.0'
   s.summary          = 'Reclaim Protocol\'s library for creating Zero Knowledge Proofs'
   s.description      = <<-DESC
 Reclaim Protocol\'s library for creating Zero Knowledge Proofs

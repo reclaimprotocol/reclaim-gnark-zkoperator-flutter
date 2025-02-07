@@ -1,4 +1,4 @@
-part of '../../gnarkprover.dart';
+part of '../../reclaim_gnark_zkoperator.dart';
 
 class _LogRecordIsolateMessage {
   final String loggerName;
