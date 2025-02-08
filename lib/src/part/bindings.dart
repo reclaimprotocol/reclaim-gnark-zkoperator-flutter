@@ -1,14 +1,14 @@
 part of '../../reclaim_gnark_zkoperator.dart';
 
-const String _libName = 'gnarkprover';
-
 /// The dynamic library in which the symbols for [GnarkProverBindings] can be found.
 final DynamicLibrary _dylib = () {
   if (Platform.isIOS) {
-    return DynamicLibrary.open('$_libName.framework/$_libName');
+    const iosLibName = 'reclaim_gnark_zkoperator';
+    return DynamicLibrary.open('$iosLibName.framework/$iosLibName');
   }
   if (Platform.isAndroid) {
-    return DynamicLibrary.open('lib$_libName.so');
+    const String androidlibName = 'gnarkprover';
+    return DynamicLibrary.open('lib$androidlibName.so');
   }
   throw UnsupportedError('Unsupported platform: ${Platform.operatingSystem}');
 }();
