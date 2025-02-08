@@ -13,7 +13,7 @@ class _InitAlgorithmWorker {
   final Map<int, Completer<Object?>> _activeRequests = {};
   int _idCounter = 0;
 
-  Future<bool> initializeAlgorithm(
+  Future<bool> initializeAlgorithmInBackground(
     ProverAlgorithmType algorithm,
     String keyAssetUrl,
     String r1csAssetUrl,
@@ -74,7 +74,7 @@ class _InitAlgorithmWorker {
     }
   }
 
-  static Future<bool> _onInitAlgorithmInIsolate(
+  static Future<bool> initializeAlgorithm(
     ProverAlgorithmType algorithm,
     String keyAssetUrl,
     String r1csAssetUrl,
@@ -82,7 +82,7 @@ class _InitAlgorithmWorker {
     final provingKeyFuture = () async {
       final now = DateTime.now();
       _logger.fine('Downloading key asset for ${algorithm.name}');
-      final asset = await algorithm.fetchKeyAsset(keyAssetUrl);
+      final asset = await downloadWithHttp(keyAssetUrl);
       _logger.info(
         'Downloaded key asset for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
       );
@@ -91,7 +91,7 @@ class _InitAlgorithmWorker {
     final r1csFuture = () async {
       final now = DateTime.now();
       _logger.fine('Downloading r1cs asset for ${algorithm.name}');
-      final asset = await algorithm.fetchR1CSAsset(r1csAssetUrl);
+      final asset = await downloadWithHttp(r1csAssetUrl);
       _logger.info(
         'Downloaded r1cs asset for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
       );
@@ -178,7 +178,7 @@ class _InitAlgorithmWorker {
         String,
       );
       try {
-        final initResponse = await _onInitAlgorithmInIsolate(
+        final initResponse = await initializeAlgorithm(
           inputBytes,
           keyAssetUrl,
           r1csAssetUrl,
