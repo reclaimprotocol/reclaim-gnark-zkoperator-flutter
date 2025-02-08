@@ -40,3 +40,4 @@ build/
 !ios/libgnarkprover.xcframework/**/*.a
 
 vendor/
+example/

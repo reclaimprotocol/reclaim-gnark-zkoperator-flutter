@@ -14,7 +14,7 @@ class _InitAlgorithmWorker {
   int _idCounter = 0;
 
   Future<bool> initializeAlgorithm(
-    KeyAlgorithmType algorithm,
+    ProverAlgorithmType algorithm,
     String keyAssetUrl,
     String r1csAssetUrl,
   ) async {
@@ -75,7 +75,7 @@ class _InitAlgorithmWorker {
   }
 
   static Future<bool> _onInitAlgorithmInIsolate(
-    KeyAlgorithmType algorithm,
+    ProverAlgorithmType algorithm,
     String keyAssetUrl,
     String r1csAssetUrl,
   ) async {
@@ -173,7 +173,7 @@ class _InitAlgorithmWorker {
         r1csAssetUrl,
       ) = message as (
         int,
-        KeyAlgorithmType,
+        ProverAlgorithmType,
         String,
         String,
       );

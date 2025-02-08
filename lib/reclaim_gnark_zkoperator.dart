@@ -9,11 +9,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
-import 'src/assets.dart';
+import 'src/algorithm/algorithm.dart';
+import 'src/algorithm/assets.dart';
 import 'src/generated_bindings.dart';
 import 'src/zk_operator.dart';
 
-export 'src/assets.dart';
+export 'src/algorithm/algorithm.dart';
+export 'src/algorithm/assets.dart';
 export 'src/zk_operator.dart';
 
 part 'src/part/bindings.dart';
@@ -31,9 +33,9 @@ part 'src/worker/prover.dart';
 final _logger = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator');
 
 /// A cache to store the initialization status of different key algorithm types.
-/// The key is the [KeyAlgorithmType] and the value is a boolean indicating
+/// The key is the [ProverAlgorithmType] and the value is a boolean indicating
 /// whether the initialization was successful.
-final _didInitializeCache = <KeyAlgorithmType, bool>{};
+final _didInitializeCache = <ProverAlgorithmType, bool>{};
 
 class KeyAlgorithmAssetUrls {
   final String keyAssetUrl;
@@ -43,7 +45,7 @@ class KeyAlgorithmAssetUrls {
 }
 
 typedef KeyAlgorithmAssetUrlsProvider = KeyAlgorithmAssetUrls Function(
-  KeyAlgorithmType algorithm,
+  ProverAlgorithmType algorithm,
 );
 
 /// {@macro reclaim_gnark_zkoperator.ZkOperator}
@@ -53,35 +55,34 @@ typedef KeyAlgorithmAssetUrlsProvider = KeyAlgorithmAssetUrls Function(
 ///
 /// This class extends [ZkOperator] and implements the methods defined in the [ZkOperator] interface.
 class ReclaimZkOperator extends ZkOperator {
+  static final _initAlgorithmWorkerFuture = _InitAlgorithmWorker.spawn();
+
   /// Initializes the prover by loading the necessary algorithms asynchronously.
   static Future<void> initializeAlgorithms(
-    List<KeyAlgorithmType> algorithms,
+    Iterable<ProverAlgorithmType> algorithms,
     KeyAlgorithmAssetUrlsProvider getAssetUrls,
   ) async {
-    final initAlgorithmWorker = await _InitAlgorithmWorker.spawn();
-    try {
-      await Future.wait(algorithms.map((algorithm) async {
-        // Skip initialization for algorithms where last initialization was successful
-        if (_didInitializeCache[algorithm] == true) return true;
-        // just locking the cache to prevent duplicate initialization
-        _didInitializeCache[algorithm] = true;
+    final worker = await _initAlgorithmWorkerFuture;
 
-        try {
-          final assetUrls = getAssetUrls(algorithm);
-          await initAlgorithmWorker.initializeAlgorithm(
-            algorithm,
-            assetUrls.keyAssetUrl,
-            assetUrls.r1csAssetUrl,
-          );
-        } catch (e, s) {
-          _logger.severe('Error initializing algorithm $algorithm', e, s);
-          _didInitializeCache[algorithm] = false;
-          rethrow;
-        }
-      }));
-    } finally {
-      initAlgorithmWorker.close();
-    }
+    await Future.wait(algorithms.map((algorithm) async {
+      // Skip initialization for algorithms where last initialization was successful
+      if (_didInitializeCache[algorithm] == true) return true;
+      // just locking the cache to prevent duplicate initialization
+      _didInitializeCache[algorithm] = true;
+
+      try {
+        final assetUrls = getAssetUrls(algorithm);
+        await worker.initializeAlgorithm(
+          algorithm,
+          assetUrls.keyAssetUrl,
+          assetUrls.r1csAssetUrl,
+        );
+      } catch (e, s) {
+        _logger.severe('Error initializing algorithm $algorithm', e, s);
+        _didInitializeCache[algorithm] = false;
+        rethrow;
+      }
+    }));
   }
 
   static Completer<void>? _oprfInitializedCompleter;
@@ -98,10 +99,10 @@ class ReclaimZkOperator extends ZkOperator {
       final completer = Completer<void>();
       _oprfInitializedCompleter = completer;
       try {
-        final log =
-            Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.ensureOprfInitialized');
+        final log = Logger(
+            'reclaim_flutter_sdk.reclaim_gnark_zkoperator.ensureOprfInitialized');
         final start = DateTime.now();
-        await initializeAlgorithms(KeyAlgorithmType.oprf, getAssetUrls);
+        await initializeAlgorithms(ProverAlgorithmType.oprf, getAssetUrls);
         final end = DateTime.now();
         final diff = end.difference(start);
         log.info(
@@ -135,7 +136,7 @@ class ReclaimZkOperator extends ZkOperator {
   ///
   /// Running this method more than once is safe.
   ///
-  /// To update an algorithm [KeyAlgorithmType]'s key and r1cs assets, you can call
+  /// To update an algorithm [ProverAlgorithmType]'s key and r1cs assets, you can call
   /// [ReclaimZkOperator.initializeAlgorithms] and use [ReclaimZkOperator] later when [initializeAlgorithms] completes.
   static Future<ReclaimZkOperator> getInstance([
     KeyAlgorithmAssetUrlsProvider getAssetUrls =
@@ -145,11 +146,12 @@ class ReclaimZkOperator extends ZkOperator {
       final completer = Completer<ReclaimZkOperator>();
       _completer = completer;
       try {
-        final log = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.getInstance');
+        final log =
+            Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.getInstance');
         final start = DateTime.now();
         // start initializing non-oprf algorithms but will wait later
         final nonOprfInitFuture = initializeAlgorithms(
-          KeyAlgorithmType.nonOprf,
+          ProverAlgorithmType.nonOprf,
           getAssetUrls,
         );
         final prover = ReclaimZkOperator._(getAssetUrls);
@@ -192,7 +194,7 @@ class ReclaimZkOperator extends ZkOperator {
   }
 
   static KeyAlgorithmAssetUrls defaultKeyAlgorithmsAssetUrlsProvider(
-    KeyAlgorithmType algorithm,
+    ProverAlgorithmType algorithm,
   ) {
     return KeyAlgorithmAssetUrls(
       algorithm.defaultKeyAssetUrl,
@@ -239,6 +241,7 @@ class ReclaimZkOperator extends ZkOperator {
       switch (fnName) {
         case 'groth16Prove':
           final bytesInput = base64.decode(args[0]['value']);
+
           return await groth16Prove(bytesInput);
         case 'finaliseOPRF':
           await ensureOprfInitialized();
