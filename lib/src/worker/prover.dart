@@ -74,16 +74,17 @@ class _ProveWorker {
     Uint8List inputBytes,
   ) async {
     final inputBytesGoPointer = _GoSliceExtension.fromUint8List(inputBytes);
-    final now = DateTime.now();
 
     _logger.finest(
       '[$id] Running prove for input of size ${inputBytes.lengthInBytes} bytes',
     );
+    final stopwatch = Stopwatch()..start();
     final proof = _bindings.Prove(
       inputBytesGoPointer.ref,
     );
+    stopwatch.stop();
     _logger.finest(
-      '[$id] Prove completed, elapsed ${DateTime.now().difference(now)}',
+      '[$id] Prove completed, elapsed ${stopwatch.elapsed}',
     );
 
     // freeing up memory for inputBytesGoPointer

@@ -74,16 +74,17 @@ class _TOPRFFinalizeWorker {
     Uint8List inputBytes,
   ) async {
     final inputBytesGoPointer = _GoSliceExtension.fromUint8List(inputBytes);
-    final now = DateTime.now();
 
     _logger.finest(
       '[$id] Running TOPRF finalize for input of size ${inputBytes.lengthInBytes} bytes',
     );
+    final stopwatch = Stopwatch()..start();
     final proof = _bindings.TOPRFFinalize(
       inputBytesGoPointer.ref,
     );
+    stopwatch.stop();
     _logger.finest(
-      '[$id] TOPRF finalize completed, elapsed ${DateTime.now().difference(now)}',
+      '[$id] TOPRF finalize completed, elapsed ${stopwatch.elapsed}',
     );
 
     // freeing up memory for inputBytesGoPointer

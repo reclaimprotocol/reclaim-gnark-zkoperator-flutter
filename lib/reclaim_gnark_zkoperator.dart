@@ -128,7 +128,7 @@ class ReclaimZkOperator extends ZkOperator {
               bytesInput,
             );
             if (algorithm != null) {
-              _logger.finest('known algorithm: $algorithm');
+              _logger.finest('ensuring prover algorithm "$algorithm" is ready');
               // ensure algorithm is initialized
               await initializer.ensureInitialized(algorithm);
             }

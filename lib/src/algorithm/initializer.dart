@@ -98,8 +98,7 @@ class ProverAlgorithmInitializer {
 
   /// Initializes the prover by loading the necessary algorithms asynchronously.
   Future<void> _initializeAllAlgorithms() async {
-    final canDownloadChachaOprfWithNonOprf = downloadPriority ==
-        ProverAlgorithmInitializationPriority.chachaOprfWithNonOprf;
+    final canDownloadChachaOprfWithNonOprf = downloadPriority == ProverAlgorithmInitializationPriority.chachaOprfWithNonOprf;
 
     final chachaFutures = Future.wait([
       ProverAlgorithmType.CHACHA20,

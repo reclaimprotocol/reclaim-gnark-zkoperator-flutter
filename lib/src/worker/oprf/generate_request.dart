@@ -74,16 +74,17 @@ class _GenerateOPRFRequestDataWorker {
     Uint8List inputBytes,
   ) async {
     final inputBytesGoPointer = _GoSliceExtension.fromUint8List(inputBytes);
-    final now = DateTime.now();
 
     _logger.finest(
       '[$id] Running generate OPRF request data for input of size ${inputBytes.lengthInBytes} bytes',
     );
+    final stopwatch = Stopwatch()..start();
     final proof = _bindings.GenerateOPRFRequestData(
       inputBytesGoPointer.ref,
     );
+    stopwatch.stop();
     _logger.finest(
-      '[$id] generated OPRF request data completed, elapsed ${DateTime.now().difference(now)}',
+      '[$id] generated OPRF request data completed, elapsed ${stopwatch.elapsed}',
     );
 
     // freeing up memory for inputBytesGoPointer

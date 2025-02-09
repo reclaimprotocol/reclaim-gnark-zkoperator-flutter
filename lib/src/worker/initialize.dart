@@ -80,20 +80,22 @@ class _InitAlgorithmWorker {
     String r1csAssetUrl,
   ) async {
     final provingKeyFuture = () async {
-      final now = DateTime.now();
       _logger.fine('Downloading key asset for ${algorithm.name}');
+      final stopwatch = Stopwatch()..start();
       final asset = await downloadWithHttp(keyAssetUrl);
+      stopwatch.stop();
       _logger.info(
-        'Downloaded key asset for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
+        'Downloaded key asset for ${algorithm.name}, elapsed ${stopwatch.elapsed}',
       );
       return asset;
     }();
     final r1csFuture = () async {
-      final now = DateTime.now();
       _logger.fine('Downloading r1cs asset for ${algorithm.name}');
+      final stopwatch = Stopwatch()..start();
       final asset = await downloadWithHttp(r1csAssetUrl);
+      stopwatch.stop();
       _logger.info(
-        'Downloaded r1cs asset for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
+        'Downloaded r1cs asset for ${algorithm.name}, elapsed ${stopwatch.elapsed}',
       );
       return asset;
     }();
@@ -118,19 +120,18 @@ class _InitAlgorithmWorker {
       provingKeyPointer = _GoSliceExtension.fromUint8List(provingKey);
       r1csPointer = _GoSliceExtension.fromUint8List(r1cs);
 
-      final now = DateTime.now();
-
       _logger.fine('Running InitAlgorithm new for ${algorithm.name}');
-
+      final stopwatch = Stopwatch()..start();
       final result = _bindings.InitAlgorithm(
         algorithm.id,
         provingKeyPointer.ref,
         r1csPointer.ref,
       );
-
+      stopwatch.stop();
       _logger.info(
-        'Init complete for ${algorithm.name}, elapsed ${DateTime.now().difference(now)}',
+        'Init complete for ${algorithm.name}, elapsed ${stopwatch.elapsed}',
       );
+
       _logger.finest({
         'func': 'InitAlgorithm',
         'args': {
