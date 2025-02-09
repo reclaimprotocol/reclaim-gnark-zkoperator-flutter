@@ -20,7 +20,8 @@ typedef ProverAlgorithmAssetUrlsProvider = KeyAlgorithmAssetUrls Function(
 final _algorithmInitializerFutureCache = <ProverAlgorithmType, Future<bool>?>{};
 final _initAlgorithmWorkerFuture = _InitAlgorithmWorker.spawn();
 
-final _initializerLog = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.initializer');
+final _initializerLog =
+    Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.initializer');
 
 Future<bool> _initialize(
   ProverAlgorithmType algorithm,
@@ -42,7 +43,8 @@ Future<bool> _initialize(
         assetUrls.r1csAssetUrl,
       );
       stopwatch.stop();
-      _initializerLog.info('Initialized algorithm $algorithm in ${stopwatch.elapsed}');
+      _initializerLog
+          .info('Initialized algorithm $algorithm in ${stopwatch.elapsed}');
       completer.complete(true);
     } catch (e, s) {
       // If there's an error, explicitly return the future with an error.
@@ -59,10 +61,22 @@ Future<bool> _initialize(
 
 bool _hasAllAlgorithmsInitialized = false;
 
+enum ProverAlgorithmInitializationPriority {
+  /// Initialize non-OPRF algorithms first, then OPRF algorithms.
+  nonOprfFirst,
+
+  /// Initialize CHACHA20-OPRF with non-OPRF first, then the remaining OPRF Algorithms.
+  chachaOprfWithNonOprf,
+}
+
 class ProverAlgorithmInitializer {
   final ProverAlgorithmAssetUrlsProvider getAssetUrls;
+  final ProverAlgorithmInitializationPriority downloadPriority;
 
-  ProverAlgorithmInitializer(this.getAssetUrls) {
+  ProverAlgorithmInitializer(
+    this.getAssetUrls, [
+    this.downloadPriority = ProverAlgorithmInitializationPriority.nonOprfFirst,
+  ]) {
     _unawaited(ensureAllInitialized());
   }
 
@@ -78,19 +92,29 @@ class ProverAlgorithmInitializer {
     await _initializeAllAlgorithms();
     _hasAllAlgorithmsInitialized = true;
     stopwatch.stop();
-    _initializerLog.info('All gnark zk operator algorithms initialized in ${stopwatch.elapsed}');
+    _initializerLog.info(
+        'All gnark zk operator algorithms initialized in ${stopwatch.elapsed}');
   }
 
   /// Initializes the prover by loading the necessary algorithms asynchronously.
   Future<void> _initializeAllAlgorithms() async {
-    final chachaFuture = ensureInitialized(
+    final canDownloadChachaOprfWithNonOprf = downloadPriority ==
+        ProverAlgorithmInitializationPriority.chachaOprfWithNonOprf;
+
+    final chachaFutures = Future.wait([
       ProverAlgorithmType.CHACHA20,
-    );
+      if (canDownloadChachaOprfWithNonOprf) ProverAlgorithmType.CHACHA20_OPRF,
+    ].map(ensureInitialized));
 
     final aesFutures = Future.wait([
       ProverAlgorithmType.AES_128,
       ProverAlgorithmType.AES_256
     ].map(ensureInitialized));
+
+    await Future.wait([
+      chachaFutures,
+      aesFutures,
+    ]);
 
     final chachaOprfFuture = ensureInitialized(
       ProverAlgorithmType.CHACHA20_OPRF,
@@ -102,8 +126,6 @@ class ProverAlgorithmInitializer {
     ].map(ensureInitialized));
 
     await Future.wait([
-      chachaFuture,
-      aesFutures,
       chachaOprfFuture,
       aesOprfFutures,
     ]);

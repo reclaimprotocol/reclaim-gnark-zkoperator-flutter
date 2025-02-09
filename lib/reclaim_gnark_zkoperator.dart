@@ -62,10 +62,15 @@ class ReclaimZkOperator extends ZkOperator {
   static Future<ReclaimZkOperator> getInstance([
     ProverAlgorithmAssetUrlsProvider getAssetUrls =
         defaultProverAlgorithmAssetUrlsProvider,
+    ProverAlgorithmInitializationPriority priority =
+        ProverAlgorithmInitializationPriority.nonOprfFirst,
   ]) async {
     if (_cachedInstances[getAssetUrls] == null) {
       _cachedInstances[getAssetUrls] =
-          ReclaimZkOperator._(ProverAlgorithmInitializer(getAssetUrls));
+          ReclaimZkOperator._(ProverAlgorithmInitializer(
+        getAssetUrls,
+        priority,
+      ));
     }
     return _cachedInstances[getAssetUrls]!;
   }
