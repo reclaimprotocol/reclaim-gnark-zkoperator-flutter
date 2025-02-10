@@ -25,6 +25,13 @@ final _initAlgorithmWorkerFuture = InitAlgorithmWorker.spawn(
 final _initializerLog =
     Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.initializer');
 
+final _initializedAlgorithms = ValueNotifier<Set<ProverAlgorithmType>>({});
+
+/// For letting consumers get some information about the initialization status.
+ValueListenable<Set<ProverAlgorithmType>> get initializedAlgorithmsNotifier {
+  return _initializedAlgorithms;
+}
+
 Future<bool> _initialize(
   ProverAlgorithmType algorithm,
   ProverAlgorithmAssetUrlsProvider getAssetUrls,
@@ -48,6 +55,10 @@ Future<bool> _initialize(
       _initializerLog
           .info('Initialized algorithm $algorithm in ${stopwatch.elapsed}');
       completer.complete(true);
+      _initializedAlgorithms.value = {
+        ..._initializedAlgorithms.value,
+        algorithm
+      };
     } catch (e, s) {
       // If there's an error, explicitly return the future with an error.
       // then set the completer to null so we can retry.
@@ -79,14 +90,14 @@ class ProverAlgorithmInitializer {
     this.getAssetUrls, [
     this.downloadPriority = ProverAlgorithmInitializationPriority.nonOprfFirst,
   ]) {
-    _unawaited(ensureAllInitialized());
+    unawaited(_startAllInitialized());
   }
 
   Future<bool> ensureInitialized(ProverAlgorithmType algorithm) {
     return _initialize(algorithm, getAssetUrls);
   }
 
-  Future<void> ensureAllInitialized() async {
+  Future<void> _startAllInitialized() async {
     if (_hasAllAlgorithmsInitialized) return;
     final stopwatch = Stopwatch();
     _initializerLog.info('Initializing all gnark zk operator algorithms');
@@ -103,35 +114,26 @@ class ProverAlgorithmInitializer {
     final canDownloadChachaOprfWithNonOprf = downloadPriority ==
         ProverAlgorithmInitializationPriority.chachaOprfWithNonOprf;
 
-    final chachaFutures = Future.wait([
+    // Download and initialize in order of importance without starving event queue.
+    // TODO: Find a better concurrency model to do all parallely without starving event queue.
+
+    await Future.wait([
       ProverAlgorithmType.CHACHA20,
       if (canDownloadChachaOprfWithNonOprf) ProverAlgorithmType.CHACHA20_OPRF,
     ].map(ensureInitialized));
 
-    final aesFutures = Future.wait([
+    await Future.wait([
       ProverAlgorithmType.AES_128,
-      ProverAlgorithmType.AES_256
+      ProverAlgorithmType.AES_256,
     ].map(ensureInitialized));
 
-    await Future.wait([
-      chachaFutures,
-      aesFutures,
-    ]);
-
-    final chachaOprfFuture = ensureInitialized(
+    await ensureInitialized(
       ProverAlgorithmType.CHACHA20_OPRF,
     );
 
-    final aesOprfFutures = Future.wait([
+    await Future.wait([
       ProverAlgorithmType.AES_128_OPRF,
       ProverAlgorithmType.AES_256_OPRF,
     ].map(ensureInitialized));
-
-    await Future.wait([
-      chachaOprfFuture,
-      aesOprfFutures,
-    ]);
   }
 }
-
-void _unawaited(Future<void>? f) {}
