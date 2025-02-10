@@ -5,13 +5,31 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:cronet_http/cronet_http.dart' as cronet;
 import 'package:cupertino_http/cupertino_http.dart' as cupertino;
+import 'package:logging/logging.dart';
 import 'package:retry/retry.dart';
+import 'package:path/path.dart' as path;
 
 import 'package:flutter/services.dart';
 
-http.Client _buildClient() {
+Directory _getCacheDir([String? cacheDirName]) {
+  final tempDir = Directory.systemTemp;
+  if (cacheDirName == null) {
+    return tempDir.createTempSync('http_cache');
+  }
+  final cacheDir = Directory(path.join(tempDir.path, cacheDirName));
+  if (!cacheDir.existsSync()) {
+    cacheDir.createSync(recursive: true);
+  }
+  return cacheDir;
+}
+
+final _buildClientLogger =
+    Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator._buildClient');
+
+http.Client _buildClient([String? cacheDirName]) {
+  final cacheDir = _getCacheDir(cacheDirName);
+  _buildClientLogger.config('Building client with cache dir $cacheDir');
   if (Platform.isAndroid) {
-    final cacheDir = Directory.systemTemp.createTempSync('cronet_cache');
     return cronet.CronetClient.fromCronetEngine(
       cronet.CronetEngine.build(
         cacheMode: cronet.CacheMode.disk,
@@ -25,9 +43,18 @@ http.Client _buildClient() {
       closeEngine: true,
     );
   } else if (Platform.isIOS || Platform.isMacOS) {
-    return cupertino.CupertinoClient.fromSessionConfiguration(
-      cupertino.URLSessionConfiguration.defaultSessionConfiguration(),
+    final config =
+        cupertino.URLSessionConfiguration.defaultSessionConfiguration();
+    config.discretionary = true;
+    config.cache = cupertino.URLCache.withCapacity(
+      memoryCapacity: 200 * 1024 * 1024,
+      diskCapacity: 200 * 1024 * 1024,
+      directory: cacheDir.uri,
     );
+    config.allowsCellularAccess = true;
+    config.allowsConstrainedNetworkAccess = true;
+    config.allowsExpensiveNetworkAccess = true;
+    return cupertino.CupertinoClient.fromSessionConfiguration(config);
   }
   return http.Client();
 }
@@ -80,14 +107,22 @@ const _useSingleClient = bool.fromEnvironment(
 
 http.Client? _commonClient;
 
+final _downloadWithHttpLogger =
+    Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.downloadWithHttp');
+
 Future<Uint8List?> downloadWithHttp(
-  String url, [
+  String url, {
   bool useSingleClient = _useSingleClient,
-]) async {
+  // ignored when useSingleClient is false
+  // this should be unique for each isolate
+  String? cacheDirName,
+}) async {
+  _downloadWithHttpLogger.config(
+      'Downloading $url with: cache dir $cacheDirName, useSingleClient $useSingleClient');
   final uri = Uri.parse(url);
   final client = useSingleClient
       // Only build the client once if [_commonClient] is null
-      ? (_commonClient ??= _buildClient())
+      ? (_commonClient ??= _buildClient(cacheDirName))
       // Build a new client for each download
       : _buildClient();
 

@@ -18,7 +18,9 @@ typedef ProverAlgorithmAssetUrlsProvider = KeyAlgorithmAssetUrls Function(
 /// The key is the [ProverAlgorithmType] and the value is a boolean indicating
 /// whether the initialization was successful.
 final _algorithmInitializerFutureCache = <ProverAlgorithmType, Future<bool>?>{};
-final _initAlgorithmWorkerFuture = _InitAlgorithmWorker.spawn();
+final _initAlgorithmWorkerFuture = InitAlgorithmWorker.spawn(
+  'prover_http_cache',
+);
 
 final _initializerLog =
     Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.initializer');
@@ -98,7 +100,8 @@ class ProverAlgorithmInitializer {
 
   /// Initializes the prover by loading the necessary algorithms asynchronously.
   Future<void> _initializeAllAlgorithms() async {
-    final canDownloadChachaOprfWithNonOprf = downloadPriority == ProverAlgorithmInitializationPriority.chachaOprfWithNonOprf;
+    final canDownloadChachaOprfWithNonOprf = downloadPriority ==
+        ProverAlgorithmInitializationPriority.chachaOprfWithNonOprf;
 
     final chachaFutures = Future.wait([
       ProverAlgorithmType.CHACHA20,

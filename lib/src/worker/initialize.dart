@@ -1,12 +1,17 @@
 part of '../../reclaim_gnark_zkoperator.dart';
 
-class _InitAlgorithmWorker {
+class InitAlgorithmWorker {
   final SendPort _commands;
   final ReceivePort _responses;
+  final String? _httpCacheDirName;
 
   static const _debugLabel = '_InitAlgorithmWorker';
 
-  _InitAlgorithmWorker._(this._commands, this._responses) {
+  InitAlgorithmWorker._(
+    this._commands,
+    this._responses,
+    this._httpCacheDirName,
+  ) {
     _responses.listen(_handleResponsesFromIsolate);
   }
 
@@ -23,12 +28,26 @@ class _InitAlgorithmWorker {
     final completer = Completer<Object?>.sync();
     final id = _idCounter++;
     _activeRequests[id] = completer;
-    _commands.send((id, algorithm, keyAssetUrl, r1csAssetUrl));
+    _commands
+        .send((id, algorithm, keyAssetUrl, r1csAssetUrl, _httpCacheDirName));
 
     return await completer.future as bool;
   }
 
-  static Future<_InitAlgorithmWorker> spawn() async {
+  // Only for use on master isolate
+  static final _httpCacheDirInUseByIsolates = <String>{};
+
+  static Future<InitAlgorithmWorker> spawn([
+    String? perIsolateHttpCacheDirName,
+  ]) async {
+    if (perIsolateHttpCacheDirName != null) {
+      if (_httpCacheDirInUseByIsolates.contains(perIsolateHttpCacheDirName)) {
+        throw ArgumentError(
+          'Http cache dir $perIsolateHttpCacheDirName is already in use',
+        );
+      }
+      _httpCacheDirInUseByIsolates.add(perIsolateHttpCacheDirName);
+    }
     // Create a receive port and add its initial message handler
     final initPort = RawReceivePort(null, _debugLabel);
     final connection = Completer<(ReceivePort, SendPort)>.sync();
@@ -55,7 +74,11 @@ class _InitAlgorithmWorker {
     final (ReceivePort receivePort, SendPort sendPort) =
         await connection.future;
 
-    return _InitAlgorithmWorker._(sendPort, receivePort);
+    return InitAlgorithmWorker._(
+      sendPort,
+      receivePort,
+      perIsolateHttpCacheDirName,
+    );
   }
 
   void _handleResponsesFromIsolate(dynamic message) {
@@ -78,11 +101,13 @@ class _InitAlgorithmWorker {
     ProverAlgorithmType algorithm,
     String keyAssetUrl,
     String r1csAssetUrl,
+    String? httpCacheDirName,
   ) async {
     final provingKeyFuture = () async {
       _logger.fine('Downloading key asset for ${algorithm.name}');
       final stopwatch = Stopwatch()..start();
-      final asset = await downloadWithHttp(keyAssetUrl);
+      final asset =
+          await downloadWithHttp(keyAssetUrl, cacheDirName: httpCacheDirName);
       stopwatch.stop();
       _logger.info(
         'Downloaded key asset for ${algorithm.name}, elapsed ${stopwatch.elapsed}',
@@ -92,7 +117,8 @@ class _InitAlgorithmWorker {
     final r1csFuture = () async {
       _logger.fine('Downloading r1cs asset for ${algorithm.name}');
       final stopwatch = Stopwatch()..start();
-      final asset = await downloadWithHttp(r1csAssetUrl);
+      final asset =
+          await downloadWithHttp(r1csAssetUrl, cacheDirName: httpCacheDirName);
       stopwatch.stop();
       _logger.info(
         'Downloaded r1cs asset for ${algorithm.name}, elapsed ${stopwatch.elapsed}',
@@ -120,13 +146,21 @@ class _InitAlgorithmWorker {
       provingKeyPointer = _GoSliceExtension.fromUint8List(provingKey);
       r1csPointer = _GoSliceExtension.fromUint8List(r1cs);
 
+      // Sharing pointer address between isolates because native allocated memory can be accessed by other isolates
+      // Direct sharing of pointers accross isolate boundaries is not supported in some versions of Dart.
+      // See: https://github.com/dart-lang/sdk/commit/eba0e68e1a9a6e81acb84de8e60ca299335ec24b
+      final provingKeyAddress = provingKeyPointer.address;
+      final r1csAddress = r1csPointer.address;
+
       _logger.fine('Running InitAlgorithm new for ${algorithm.name}');
       final stopwatch = Stopwatch()..start();
-      final result = _bindings.InitAlgorithm(
-        algorithm.id,
-        provingKeyPointer.ref,
-        r1csPointer.ref,
-      );
+      final result = await Isolate.run(() {
+        return _bindings.InitAlgorithm(
+          algorithm.id,
+          Pointer.fromAddress(provingKeyAddress).cast<GoSlice>().ref,
+          Pointer.fromAddress(r1csAddress).cast<GoSlice>().ref,
+        );
+      });
       stopwatch.stop();
       _logger.info(
         'Init complete for ${algorithm.name}, elapsed ${stopwatch.elapsed}',
@@ -169,20 +203,23 @@ class _InitAlgorithmWorker {
       }
       final (
         id,
-        inputBytes,
+        algorithm,
         keyAssetUrl,
         r1csAssetUrl,
+        httpCacheDirName,
       ) = message as (
         int,
         ProverAlgorithmType,
         String,
         String,
+        String?,
       );
       try {
         final initResponse = await initializeAlgorithm(
-          inputBytes,
+          algorithm,
           keyAssetUrl,
           r1csAssetUrl,
+          httpCacheDirName,
         );
         sendPort.send((id, initResponse));
       } catch (e) {
@@ -207,6 +244,7 @@ class _InitAlgorithmWorker {
       _closed = true;
       _commands.send('shutdown');
       if (_activeRequests.isEmpty) _responses.close();
+      _httpCacheDirInUseByIsolates.remove(_httpCacheDirName);
       return true;
     }
     return true;
