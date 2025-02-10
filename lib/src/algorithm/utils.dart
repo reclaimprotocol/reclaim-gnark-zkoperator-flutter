@@ -23,9 +23,14 @@ extension _IdBytes on ProverAlgorithmType {
   }
 }
 
+final _orderedAlgorithmTypes = [
+  ...ProverAlgorithmType.oprf,
+  ...ProverAlgorithmType.nonOprf,
+];
+
 ProverAlgorithmType? identifyAlgorithmFromZKOperationRequest(Uint8List bytes) {
   try {
-    for (final algorithm in ProverAlgorithmType.values) {
+    for (final algorithm in _orderedAlgorithmTypes) {
       // check if the request bytes contain the algorithm name or key
       if (hasSubview(bytes, algorithm.nameToBytes())) {
         return algorithm;

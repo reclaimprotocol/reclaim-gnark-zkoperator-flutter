@@ -119,6 +119,10 @@ class ReclaimZkOperator extends ZkOperator {
   /// Read more about it in reclaim_flutter_sdk's README and reclaim_flutter_sdk/example's README.md.
   @override
   Future<String> computeAttestorProof(String fnName, List<dynamic> args) async {
+    final logger = Logger(
+      'reclaim_flutter_sdk.reclaim_gnark_zkoperator.computeAttestorProof.$fnName',
+    );
+
     final String response = await () async {
       switch (fnName) {
         case 'groth16Prove':
@@ -128,10 +132,15 @@ class ReclaimZkOperator extends ZkOperator {
               bytesInput,
             );
             if (algorithm != null) {
-              _logger.finest('ensuring prover algorithm "$algorithm" is ready');
+              logger.finest('ensuring prover algorithm "$algorithm" is ready');
               // ensure algorithm is initialized
               await initializer.ensureInitialized(algorithm);
+              logger.finest('prover algorithm "$algorithm" is ready');
+            } else {
+              logger.finest('no algorithm found in the zk operation request');
             }
+          } else {
+            logger.finest('all prover algorithms should be ready');
           }
           return await groth16Prove(bytesInput);
         case 'finaliseOPRF':
