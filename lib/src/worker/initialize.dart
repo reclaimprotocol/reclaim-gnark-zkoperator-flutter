@@ -146,21 +146,37 @@ class InitAlgorithmWorker {
       provingKeyPointer = _GoSliceExtension.fromUint8List(provingKey);
       r1csPointer = _GoSliceExtension.fromUint8List(r1cs);
 
-      // Sharing pointer address between isolates because native allocated memory can be accessed by other isolates
-      // Direct sharing of pointers accross isolate boundaries is not supported in some versions of Dart.
-      // See: https://github.com/dart-lang/sdk/commit/eba0e68e1a9a6e81acb84de8e60ca299335ec24b
-      final provingKeyAddress = provingKeyPointer.address;
-      final r1csAddress = r1csPointer.address;
+      const canInitializeInIsolate = bool.fromEnvironment(
+        'org.reclaimprotocol.gnark_zkoperator.CAN_INITIALIZE_PROVER_IN_ISOLATE',
+        // Disabled by default because this was causing oom problems with aggressive os applied optimizations
+        defaultValue: true,
+      );
+
+      int result = 0;
 
       _logger.fine('Running InitAlgorithm new for ${algorithm.name}');
       final stopwatch = Stopwatch()..start();
-      final result = await Isolate.run(() {
-        return _bindings.InitAlgorithm(
+      if (canInitializeInIsolate) {
+        // Sharing pointer address between isolates because native allocated memory can be accessed by other isolates
+        // Direct sharing of pointers accross isolate boundaries is not supported in some versions of Dart.
+        // See: https://github.com/dart-lang/sdk/commit/eba0e68e1a9a6e81acb84de8e60ca299335ec24b
+        final provingKeyAddress = provingKeyPointer.address;
+        final r1csAddress = r1csPointer.address;
+        result = await Isolate.run(() {
+          return _bindings.InitAlgorithm(
+            algorithm.id,
+            Pointer.fromAddress(provingKeyAddress).cast<GoSlice>().ref,
+            Pointer.fromAddress(r1csAddress).cast<GoSlice>().ref,
+          );
+        });
+      } else {
+        result = _bindings.InitAlgorithm(
           algorithm.id,
-          Pointer.fromAddress(provingKeyAddress).cast<GoSlice>().ref,
-          Pointer.fromAddress(r1csAddress).cast<GoSlice>().ref,
+          provingKeyPointer.ref,
+          provingKeyPointer.ref,
         );
-      });
+      }
+
       stopwatch.stop();
       _logger.info(
         'Init complete for ${algorithm.name}, elapsed ${stopwatch.elapsed}',

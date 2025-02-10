@@ -1,5 +1,6 @@
 import 'algorithm.dart';
 
+// https://github.com/reclaimprotocol/zk-symmetric-crypto/raw/refs/heads/main/resources/gnark
 const _gnarkAssetBaseUrl = 'https://d5znggfgtutzp.cloudfront.net';
 
 extension ProverAlgorithmTypeAssets on ProverAlgorithmType {
