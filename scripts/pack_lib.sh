@@ -22,7 +22,7 @@ if [ "$IS_PACKING_ENABLED" = "true" ]; then
         chmod +x "$file"
         
         # # Pack the library using UPX with maximum compression
-        upx -9 "$file" --android-shlib
+        upx --ultra-brute --no-lzma "$file" --android-shlib
         
         # Get packed file size
         packed_size=$(stat -f %z "$file" 2>/dev/null || stat -c %s "$file")
