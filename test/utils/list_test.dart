@@ -45,9 +45,7 @@ void main() {
     });
 
     test('recurring subsequence in sequence', () {
-      expect(
-          isContiguousSubsequence([1, 2, 3], [1, 2, 2, 4, 2, 1, 2, 3, 1, 2, 3]),
-          true);
+      expect(isContiguousSubsequence([1, 2, 3], [1, 2, 2, 4, 2, 1, 2, 3, 1, 2, 3]), true);
     });
   });
 }

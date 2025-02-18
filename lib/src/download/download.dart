@@ -23,8 +23,7 @@ Directory _getCacheDir([String? cacheDirName]) {
   return cacheDir;
 }
 
-final _buildClientLogger =
-    Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator._buildClient');
+final _buildClientLogger = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator._buildClient');
 
 http.Client _buildClient([String? cacheDirName]) {
   final cacheDir = _getCacheDir(cacheDirName);
@@ -43,8 +42,7 @@ http.Client _buildClient([String? cacheDirName]) {
       closeEngine: true,
     );
   } else if (Platform.isIOS || Platform.isMacOS) {
-    final config =
-        cupertino.URLSessionConfiguration.defaultSessionConfiguration();
+    final config = cupertino.URLSessionConfiguration.defaultSessionConfiguration();
     config.discretionary = true;
     config.cache = cupertino.URLCache.withCapacity(
       memoryCapacity: 200 * 1024 * 1024,
@@ -64,8 +62,7 @@ class _RetryableHttpException extends http.ClientException {
 }
 
 class _EmptyResponseException extends http.ClientException {
-  _EmptyResponseException(String message, [Uri? uri])
-      : super('Empty response: $message', uri);
+  _EmptyResponseException(String message, [Uri? uri]) : super('Empty response: $message', uri);
 }
 
 extension _ReadUnstreamed on http.Client {
@@ -107,8 +104,7 @@ const _useSingleClient = bool.fromEnvironment(
 
 http.Client? _commonClient;
 
-final _downloadWithHttpLogger =
-    Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.downloadWithHttp');
+final _downloadWithHttpLogger = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.downloadWithHttp');
 
 Future<Uint8List?> downloadWithHttp(
   String url, {
@@ -117,8 +113,7 @@ Future<Uint8List?> downloadWithHttp(
   // this should be unique for each isolate
   String? cacheDirName,
 }) async {
-  _downloadWithHttpLogger.config(
-      'Downloading $url with: cache dir $cacheDirName, useSingleClient $useSingleClient');
+  _downloadWithHttpLogger.config('Downloading $url with: cache dir $cacheDirName, useSingleClient $useSingleClient');
   final uri = Uri.parse(url);
   final client = useSingleClient
       // Only build the client once if [_commonClient] is null
@@ -133,10 +128,7 @@ Future<Uint8List?> downloadWithHttp(
       },
       // Retry on SocketException or TimeoutException or _RetryableHttpException
       retryIf: (e) {
-        return e is SocketException ||
-            e is TimeoutException ||
-            e is _RetryableHttpException ||
-            e is _EmptyResponseException;
+        return e is SocketException || e is TimeoutException || e is _RetryableHttpException || e is _EmptyResponseException;
       },
     );
     if (!useSingleClient) {

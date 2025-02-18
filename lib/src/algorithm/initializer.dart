@@ -22,8 +22,7 @@ final _initAlgorithmWorkerFuture = InitAlgorithmWorker.spawn(
   'prover_http_cache',
 );
 
-final _initializerLog =
-    Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.initializer');
+final _initializerLog = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.initializer');
 
 final _initializedAlgorithms = ValueNotifier<Set<ProverAlgorithmType>>({});
 
@@ -52,13 +51,9 @@ Future<bool> _initialize(
         assetUrls.r1csAssetUrl,
       );
       stopwatch.stop();
-      _initializerLog
-          .info('Initialized algorithm $algorithm in ${stopwatch.elapsed}');
+      _initializerLog.info('Initialized algorithm $algorithm in ${stopwatch.elapsed}');
       completer.complete(true);
-      _initializedAlgorithms.value = {
-        ..._initializedAlgorithms.value,
-        algorithm
-      };
+      _initializedAlgorithms.value = {..._initializedAlgorithms.value, algorithm};
     } catch (e, s) {
       // If there's an error, explicitly return the future with an error.
       // then set the completer to null so we can retry.
@@ -105,14 +100,12 @@ class ProverAlgorithmInitializer {
     await _initializeAllAlgorithms();
     _hasAllAlgorithmsInitialized = true;
     stopwatch.stop();
-    _initializerLog.info(
-        'All gnark zk operator algorithms initialized in ${stopwatch.elapsed}');
+    _initializerLog.info('All gnark zk operator algorithms initialized in ${stopwatch.elapsed}');
   }
 
   /// Initializes the prover by loading the necessary algorithms asynchronously.
   Future<void> _initializeAllAlgorithms() async {
-    final canDownloadChachaOprfWithNonOprf = downloadPriority ==
-        ProverAlgorithmInitializationPriority.chachaOprfWithNonOprf;
+    final canDownloadChachaOprfWithNonOprf = downloadPriority == ProverAlgorithmInitializationPriority.chachaOprfWithNonOprf;
 
     // Download and initialize in order of importance without starving event queue.
     // TODO: Find a better concurrency model to do all parallely without starving event queue.

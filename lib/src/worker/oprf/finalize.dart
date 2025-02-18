@@ -46,8 +46,7 @@ class _TOPRFFinalizeWorker {
       rethrow;
     }
 
-    final (ReceivePort receivePort, SendPort sendPort) =
-        await connection.future;
+    final (ReceivePort receivePort, SendPort sendPort) = await connection.future;
 
     return _TOPRFFinalizeWorker._(sendPort, receivePort);
   }
@@ -121,8 +120,7 @@ class _TOPRFFinalizeWorker {
       final (id, inputBytes) = message as (int, Uint8List);
       final proofId = Object().hashCode;
       try {
-        final proofResponse =
-            await _onFinalizeOPRFInIsolate(proofId, inputBytes);
+        final proofResponse = await _onFinalizeOPRFInIsolate(proofId, inputBytes);
         sendPort.send((id, proofResponse));
       } catch (e, s) {
         _logger.severe('[$proofId] TOPRF finalize Failed in isolate', e, s);

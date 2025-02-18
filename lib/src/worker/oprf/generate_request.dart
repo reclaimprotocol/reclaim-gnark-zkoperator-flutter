@@ -46,8 +46,7 @@ class _GenerateOPRFRequestDataWorker {
       rethrow;
     }
 
-    final (ReceivePort receivePort, SendPort sendPort) =
-        await connection.future;
+    final (ReceivePort receivePort, SendPort sendPort) = await connection.future;
 
     return _GenerateOPRFRequestDataWorker._(sendPort, receivePort);
   }
@@ -121,12 +120,10 @@ class _GenerateOPRFRequestDataWorker {
       final (id, inputBytes) = message as (int, Uint8List);
       final proofId = Object().hashCode;
       try {
-        final proofResponse =
-            await _onGenerateOPRFRequestDataInIsolate(proofId, inputBytes);
+        final proofResponse = await _onGenerateOPRFRequestDataInIsolate(proofId, inputBytes);
         sendPort.send((id, proofResponse));
       } catch (e, s) {
-        _logger.severe(
-            '[$proofId] generate OPRF request data Failed in isolate', e, s);
+        _logger.severe('[$proofId] generate OPRF request data Failed in isolate', e, s);
         sendPort.send((id, RemoteError(e.toString(), s.toString())));
       }
     });

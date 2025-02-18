@@ -42,8 +42,7 @@ final _logger = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator');
 ///
 /// This class extends [ZkOperator] and implements the methods defined in the [ZkOperator] interface.
 class ReclaimZkOperator extends ZkOperator {
-  static final _cachedInstances =
-      <ProverAlgorithmAssetUrlsProvider, ReclaimZkOperator>{};
+  static final _cachedInstances = <ProverAlgorithmAssetUrlsProvider, ReclaimZkOperator>{};
 
   /// Returns a singleton instance of [ReclaimZkOperator].
   ///
@@ -60,14 +59,11 @@ class ReclaimZkOperator extends ZkOperator {
   /// To update an algorithm [ProverAlgorithmType]'s key and r1cs assets, you can call
   /// [ReclaimZkOperator._initializeAllAlgorithms] and use [ReclaimZkOperator] later when [_initializeAllAlgorithms] completes.
   static Future<ReclaimZkOperator> getInstance([
-    ProverAlgorithmAssetUrlsProvider getAssetUrls =
-        defaultProverAlgorithmAssetUrlsProvider,
-    ProverAlgorithmInitializationPriority priority =
-        ProverAlgorithmInitializationPriority.nonOprfFirst,
+    ProverAlgorithmAssetUrlsProvider getAssetUrls = defaultProverAlgorithmAssetUrlsProvider,
+    ProverAlgorithmInitializationPriority priority = ProverAlgorithmInitializationPriority.nonOprfFirst,
   ]) async {
     if (_cachedInstances[getAssetUrls] == null) {
-      _cachedInstances[getAssetUrls] =
-          ReclaimZkOperator._(ProverAlgorithmInitializer(
+      _cachedInstances[getAssetUrls] = ReclaimZkOperator._(ProverAlgorithmInitializer(
         getAssetUrls,
         priority,
       ));
@@ -184,8 +180,7 @@ class ReclaimZkOperator extends ZkOperator {
 
   @override
   Future<String> finaliseOPRF(Uint8List bytes) async {
-    final workerFuture =
-        _toprfFinalizeWorkerFuture ??= _TOPRFFinalizeWorker.spawn();
+    final workerFuture = _toprfFinalizeWorkerFuture ??= _TOPRFFinalizeWorker.spawn();
     final worker = await workerFuture;
     return worker.toprfFinalize(bytes);
   }
@@ -194,8 +189,7 @@ class ReclaimZkOperator extends ZkOperator {
 
   @override
   Future<String> generateOPRFRequestData(Uint8List bytes) async {
-    final workerFuture = _generateOPRFRequestDataWorkerFuture ??=
-        _GenerateOPRFRequestDataWorker.spawn();
+    final workerFuture = _generateOPRFRequestDataWorkerFuture ??= _GenerateOPRFRequestDataWorker.spawn();
     final worker = await workerFuture;
     return worker.generateOPRFRequestData(bytes);
   }

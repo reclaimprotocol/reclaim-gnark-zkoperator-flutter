@@ -46,8 +46,7 @@ class _ProveWorker {
       rethrow;
     }
 
-    final (ReceivePort receivePort, SendPort sendPort) =
-        await connection.future;
+    final (ReceivePort receivePort, SendPort sendPort) = await connection.future;
 
     return _ProveWorker._(sendPort, receivePort);
   }

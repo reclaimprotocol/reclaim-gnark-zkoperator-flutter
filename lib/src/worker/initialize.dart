@@ -28,8 +28,7 @@ class InitAlgorithmWorker {
     final completer = Completer<Object?>.sync();
     final id = _idCounter++;
     _activeRequests[id] = completer;
-    _commands
-        .send((id, algorithm, keyAssetUrl, r1csAssetUrl, _httpCacheDirName));
+    _commands.send((id, algorithm, keyAssetUrl, r1csAssetUrl, _httpCacheDirName));
 
     return await completer.future as bool;
   }
@@ -71,8 +70,7 @@ class InitAlgorithmWorker {
       rethrow;
     }
 
-    final (ReceivePort receivePort, SendPort sendPort) =
-        await connection.future;
+    final (ReceivePort receivePort, SendPort sendPort) = await connection.future;
 
     return InitAlgorithmWorker._(
       sendPort,
@@ -106,8 +104,7 @@ class InitAlgorithmWorker {
     final provingKeyFuture = () async {
       _logger.fine('Downloading key asset for ${algorithm.name}');
       final stopwatch = Stopwatch()..start();
-      final asset =
-          await downloadWithHttp(keyAssetUrl, cacheDirName: httpCacheDirName);
+      final asset = await downloadWithHttp(keyAssetUrl, cacheDirName: httpCacheDirName);
       stopwatch.stop();
       _logger.info(
         'Downloaded key asset for ${algorithm.name}, elapsed ${stopwatch.elapsed}',
@@ -117,8 +114,7 @@ class InitAlgorithmWorker {
     final r1csFuture = () async {
       _logger.fine('Downloading r1cs asset for ${algorithm.name}');
       final stopwatch = Stopwatch()..start();
-      final asset =
-          await downloadWithHttp(r1csAssetUrl, cacheDirName: httpCacheDirName);
+      final asset = await downloadWithHttp(r1csAssetUrl, cacheDirName: httpCacheDirName);
       stopwatch.stop();
       _logger.info(
         'Downloaded r1cs asset for ${algorithm.name}, elapsed ${stopwatch.elapsed}',

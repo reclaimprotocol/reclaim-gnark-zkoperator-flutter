@@ -1,4 +1,6 @@
-// ignore_for_file: always_specify_types, unused_element, camel_case_types, non_constant_identifier_names
+// ignore_for_file: always_specify_types
+// ignore_for_file: camel_case_types
+// ignore_for_file: non_constant_identifier_names
 
 // AUTO GENERATED FILE, DO NOT EDIT.
 //
@@ -12,27 +14,20 @@ import 'dart:ffi' as ffi;
 ///
 class GnarkProverBindings {
   /// Holds the symbol lookup function.
-  final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-      _lookup;
+  final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) _lookup;
 
   /// The symbols are looked up in [dynamicLibrary].
-  GnarkProverBindings(ffi.DynamicLibrary dynamicLibrary)
-      : _lookup = dynamicLibrary.lookup;
+  GnarkProverBindings(ffi.DynamicLibrary dynamicLibrary) : _lookup = dynamicLibrary.lookup;
 
   /// The symbols are looked up with [lookup].
-  GnarkProverBindings.fromLookup(
-      ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-          lookup)
-      : _lookup = lookup;
+  GnarkProverBindings.fromLookup(ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup) : _lookup = lookup;
 
   void enforce_binding() {
     return _enforce_binding();
   }
 
-  late final _enforce_bindingPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>('enforce_binding');
-  late final _enforce_binding =
-      _enforce_bindingPtr.asFunction<void Function()>();
+  late final _enforce_bindingPtr = _lookup<ffi.NativeFunction<ffi.Void Function()>>('enforce_binding');
+  late final _enforce_binding = _enforce_bindingPtr.asFunction<void Function()>();
 
   void Free(
     ffi.Pointer pointer,
@@ -42,16 +37,14 @@ class GnarkProverBindings {
     );
   }
 
-  late final _FreePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer)>>('Free');
+  late final _FreePtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer)>>('Free');
   late final _Free = _FreePtr.asFunction<void Function(ffi.Pointer)>();
 
   Prove_return Prove(GoSlice params) {
     return _Prove(params);
   }
 
-  late final _ProvePtr =
-      _lookup<ffi.NativeFunction<Prove_return Function(GoSlice)>>('Prove');
+  late final _ProvePtr = _lookup<ffi.NativeFunction<Prove_return Function(GoSlice)>>('Prove');
   late final _Prove = _ProvePtr.asFunction<Prove_return Function(GoSlice)>();
 
   int InitAlgorithm(
@@ -66,11 +59,8 @@ class GnarkProverBindings {
     );
   }
 
-  late final _InitAlgorithmPtr =
-      _lookup<ffi.NativeFunction<GoUint8 Function(GoUint8, GoSlice, GoSlice)>>(
-          'InitAlgorithm');
-  late final _InitAlgorithm =
-      _InitAlgorithmPtr.asFunction<int Function(int, GoSlice, GoSlice)>();
+  late final _InitAlgorithmPtr = _lookup<ffi.NativeFunction<GoUint8 Function(GoUint8, GoSlice, GoSlice)>>('InitAlgorithm');
+  late final _InitAlgorithm = _InitAlgorithmPtr.asFunction<int Function(int, GoSlice, GoSlice)>();
 
   GenerateOPRFRequestData_return GenerateOPRFRequestData(
     GoSlice params,
@@ -80,11 +70,8 @@ class GnarkProverBindings {
     );
   }
 
-  late final _GenerateOPRFRequestDataPtr = _lookup<
-          ffi.NativeFunction<GenerateOPRFRequestData_return Function(GoSlice)>>(
-      'GenerateOPRFRequestData');
-  late final _GenerateOPRFRequestData = _GenerateOPRFRequestDataPtr.asFunction<
-      GenerateOPRFRequestData_return Function(GoSlice)>();
+  late final _GenerateOPRFRequestDataPtr = _lookup<ffi.NativeFunction<GenerateOPRFRequestData_return Function(GoSlice)>>('GenerateOPRFRequestData');
+  late final _GenerateOPRFRequestData = _GenerateOPRFRequestDataPtr.asFunction<GenerateOPRFRequestData_return Function(GoSlice)>();
 
   TOPRFFinalize_return TOPRFFinalize(
     GoSlice params,
@@ -94,11 +81,8 @@ class GnarkProverBindings {
     );
   }
 
-  late final _TOPRFFinalizePtr =
-      _lookup<ffi.NativeFunction<TOPRFFinalize_return Function(GoSlice)>>(
-          'TOPRFFinalize');
-  late final _TOPRFFinalize =
-      _TOPRFFinalizePtr.asFunction<TOPRFFinalize_return Function(GoSlice)>();
+  late final _TOPRFFinalizePtr = _lookup<ffi.NativeFunction<TOPRFFinalize_return Function(GoSlice)>>('TOPRFFinalize');
+  late final _TOPRFFinalize = _TOPRFFinalizePtr.asFunction<TOPRFFinalize_return Function(GoSlice)>();
 }
 
 final class _GoString_ extends ffi.Struct {
@@ -111,6 +95,28 @@ final class _GoString_ extends ffi.Struct {
 typedef ptrdiff_t = __darwin_ptrdiff_t;
 typedef __darwin_ptrdiff_t = ffi.Long;
 typedef Dart__darwin_ptrdiff_t = int;
+typedef GoInt8 = ffi.SignedChar;
+typedef DartGoInt8 = int;
+typedef GoInt16 = ffi.Short;
+typedef DartGoInt16 = int;
+typedef GoUint16 = ffi.UnsignedShort;
+typedef DartGoUint16 = int;
+typedef GoInt32 = ffi.Int;
+typedef DartGoInt32 = int;
+typedef GoUint32 = ffi.UnsignedInt;
+typedef DartGoUint32 = int;
+typedef GoUint64 = ffi.UnsignedLongLong;
+typedef DartGoUint64 = int;
+typedef GoUint = GoUint64;
+typedef GoUintptr = ffi.Size;
+typedef DartGoUintptr = int;
+typedef GoFloat32 = ffi.Float;
+typedef DartGoFloat32 = double;
+typedef GoFloat64 = ffi.Double;
+typedef DartGoFloat64 = double;
+typedef GoString = _GoString_;
+typedef GoMap = ffi.Pointer<ffi.Void>;
+typedef GoChan = ffi.Pointer<ffi.Void>;
 
 final class GoInterface extends ffi.Struct {
   external ffi.Pointer<ffi.Void> t;
