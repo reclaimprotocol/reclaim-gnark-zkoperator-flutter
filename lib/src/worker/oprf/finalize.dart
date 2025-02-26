@@ -29,18 +29,11 @@ class _TOPRFFinalizeWorker {
     final connection = Completer<(ReceivePort, SendPort)>.sync();
     initPort.handler = (initialMessage) {
       final commandPort = initialMessage as SendPort;
-      connection.complete((
-        ReceivePort.fromRawReceivePort(initPort),
-        commandPort,
-      ));
+      connection.complete((ReceivePort.fromRawReceivePort(initPort), commandPort));
     };
     // Spawn the isolate.
     try {
-      await Isolate.spawn(
-        _startRemoteIsolate,
-        (initPort.sendPort),
-        debugName: _debugLabel,
-      );
+      await Isolate.spawn(_startRemoteIsolate, (initPort.sendPort), debugName: _debugLabel);
     } on Object {
       initPort.close();
       rethrow;
@@ -74,17 +67,11 @@ class _TOPRFFinalizeWorker {
   ) async {
     final inputBytesGoPointer = _GoSliceExtension.fromUint8List(inputBytes);
 
-    _logger.finest(
-      '[$id] Running TOPRF finalize for input of size ${inputBytes.lengthInBytes} bytes',
-    );
+    _logger.finest('[$id] Running TOPRF finalize for input of size ${inputBytes.lengthInBytes} bytes');
     final stopwatch = Stopwatch()..start();
-    final proof = _bindings.TOPRFFinalize(
-      inputBytesGoPointer.ref,
-    );
+    final proof = _bindings.TOPRFFinalize(inputBytesGoPointer.ref);
     stopwatch.stop();
-    _logger.finest(
-      '[$id] TOPRF finalize completed, elapsed ${stopwatch.elapsed}',
-    );
+    _logger.finest('[$id] TOPRF finalize completed, elapsed ${stopwatch.elapsed}');
 
     // freeing up memory for inputBytesGoPointer
     calloc.free(inputBytesGoPointer.ref.data);
@@ -108,10 +95,7 @@ class _TOPRFFinalizeWorker {
     return proofStr;
   }
 
-  static void _handleCommandsToIsolate(
-    ReceivePort receivePort,
-    SendPort sendPort,
-  ) async {
+  static void _handleCommandsToIsolate(ReceivePort receivePort, SendPort sendPort) async {
     receivePort.listen((message) async {
       if (message == 'shutdown') {
         receivePort.close();

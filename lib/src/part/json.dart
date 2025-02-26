@@ -1,8 +1,6 @@
 part of '../../reclaim_gnark_zkoperator.dart';
 
-final RegExp _base64 = RegExp(
-  r'^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4})$',
-);
+final RegExp _base64 = RegExp(r'^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4})$');
 
 /// check if a string is base64 encoded
 bool _isBase64(String str) {
@@ -19,25 +17,17 @@ Object? _base64JsonReviver(Object? key, Object? value) {
         bytes[int.parse(entry.key)] = entry.value as int;
       }
       final base64String = base64.encode(bytes);
-      return {
-        'type': 'uint8array',
-        'value': base64String,
-      };
+      return {'type': 'uint8array', 'value': base64String};
     }
   }
   if (value is String && _isBase64(value)) {
-    return {
-      'type': 'uint8array',
-      'value': value,
-    };
+    return {'type': 'uint8array', 'value': value};
   }
   return value;
 }
 
 String _reformatJsonStringForRPC(String jsonString) {
-  return json.encode(
-    json.decode(jsonString, reviver: _base64JsonReviver),
-  );
+  return json.encode(json.decode(jsonString, reviver: _base64JsonReviver));
 }
 
 Object? _replaceBase64Json(Object? value) {

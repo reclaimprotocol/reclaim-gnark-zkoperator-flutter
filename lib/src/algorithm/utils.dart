@@ -6,9 +6,7 @@ import 'package:reclaim_gnark_zkoperator/src/utils/list.dart';
 
 import 'algorithm.dart';
 
-final _logger = Logger(
-  'reclaim_flutter_sdk.reclaim_gnark_zkoperator.algorithm.utils',
-);
+final _logger = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.algorithm.utils');
 
 final _nameToBytes = <ProverAlgorithmType, Uint8List>{};
 final _keyToBytes = <ProverAlgorithmType, Uint8List>{};
@@ -23,10 +21,7 @@ extension _IdBytes on ProverAlgorithmType {
   }
 }
 
-final _orderedAlgorithmTypes = [
-  ...ProverAlgorithmType.oprf,
-  ...ProverAlgorithmType.nonOprf,
-];
+final _orderedAlgorithmTypes = [...ProverAlgorithmType.oprf, ...ProverAlgorithmType.nonOprf];
 
 ProverAlgorithmType? identifyAlgorithmFromZKOperationRequest(Uint8List bytes) {
   try {
@@ -56,11 +51,7 @@ ProverAlgorithmType? identifyAlgorithmFromZKOperationRequest(Uint8List bytes) {
       }
     }
   } catch (e, s) {
-    _logger.severe(
-      'Error identifying algorithm from zk operation request',
-      e,
-      s,
-    );
+    _logger.severe('Error identifying algorithm from zk operation request', e, s);
   }
   return null;
 }

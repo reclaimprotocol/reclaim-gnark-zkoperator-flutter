@@ -7,11 +7,7 @@ class InitAlgorithmWorker {
 
   static const _debugLabel = '_InitAlgorithmWorker';
 
-  InitAlgorithmWorker._(
-    this._commands,
-    this._responses,
-    this._httpCacheDirName,
-  ) {
+  InitAlgorithmWorker._(this._commands, this._responses, this._httpCacheDirName) {
     _responses.listen(_handleResponsesFromIsolate);
   }
 
@@ -36,14 +32,10 @@ class InitAlgorithmWorker {
   // Only for use on master isolate
   static final _httpCacheDirInUseByIsolates = <String>{};
 
-  static Future<InitAlgorithmWorker> spawn([
-    String? perIsolateHttpCacheDirName,
-  ]) async {
+  static Future<InitAlgorithmWorker> spawn([String? perIsolateHttpCacheDirName]) async {
     if (perIsolateHttpCacheDirName != null) {
       if (_httpCacheDirInUseByIsolates.contains(perIsolateHttpCacheDirName)) {
-        throw ArgumentError(
-          'Http cache dir $perIsolateHttpCacheDirName is already in use',
-        );
+        throw ArgumentError('Http cache dir $perIsolateHttpCacheDirName is already in use');
       }
       _httpCacheDirInUseByIsolates.add(perIsolateHttpCacheDirName);
     }
@@ -52,19 +44,12 @@ class InitAlgorithmWorker {
     final connection = Completer<(ReceivePort, SendPort)>.sync();
     initPort.handler = (initialMessage) {
       final commandPort = initialMessage as SendPort;
-      connection.complete((
-        ReceivePort.fromRawReceivePort(initPort),
-        commandPort,
-      ));
+      connection.complete((ReceivePort.fromRawReceivePort(initPort), commandPort));
     };
     // Spawn the isolate.
     try {
       final rootToken = RootIsolateToken.instance!;
-      await Isolate.spawn(
-        _startRemoteIsolate,
-        (rootToken, initPort.sendPort),
-        debugName: _debugLabel,
-      );
+      await Isolate.spawn(_startRemoteIsolate, (rootToken, initPort.sendPort), debugName: _debugLabel);
     } on Object {
       initPort.close();
       rethrow;
@@ -72,11 +57,7 @@ class InitAlgorithmWorker {
 
     final (ReceivePort receivePort, SendPort sendPort) = await connection.future;
 
-    return InitAlgorithmWorker._(
-      sendPort,
-      receivePort,
-      perIsolateHttpCacheDirName,
-    );
+    return InitAlgorithmWorker._(sendPort, receivePort, perIsolateHttpCacheDirName);
   }
 
   void _handleResponsesFromIsolate(dynamic message) {
@@ -106,9 +87,7 @@ class InitAlgorithmWorker {
       final stopwatch = Stopwatch()..start();
       final asset = await downloadWithHttp(keyAssetUrl, cacheDirName: httpCacheDirName);
       stopwatch.stop();
-      _logger.info(
-        'Downloaded key asset for ${algorithm.name}, elapsed ${stopwatch.elapsed}',
-      );
+      _logger.info('Downloaded key asset for ${algorithm.name}, elapsed ${stopwatch.elapsed}');
       return asset;
     }();
     final r1csFuture = () async {
@@ -116,9 +95,7 @@ class InitAlgorithmWorker {
       final stopwatch = Stopwatch()..start();
       final asset = await downloadWithHttp(r1csAssetUrl, cacheDirName: httpCacheDirName);
       stopwatch.stop();
-      _logger.info(
-        'Downloaded r1cs asset for ${algorithm.name}, elapsed ${stopwatch.elapsed}',
-      );
+      _logger.info('Downloaded r1cs asset for ${algorithm.name}, elapsed ${stopwatch.elapsed}');
       return asset;
     }();
 
@@ -166,25 +143,16 @@ class InitAlgorithmWorker {
           );
         });
       } else {
-        result = _bindings.InitAlgorithm(
-          algorithm.id,
-          provingKeyPointer.ref,
-          provingKeyPointer.ref,
-        );
+        result = _bindings.InitAlgorithm(algorithm.id, provingKeyPointer.ref, provingKeyPointer.ref);
       }
 
       stopwatch.stop();
-      _logger.info(
-        'Init complete for ${algorithm.name}, elapsed ${stopwatch.elapsed}',
-      );
+      _logger.info('Init complete for ${algorithm.name}, elapsed ${stopwatch.elapsed}');
 
       _logger.finest({
         'func': 'InitAlgorithm',
         'args': {
-          'algorithm': {
-            'name': algorithm.name,
-            'id': algorithm.id,
-          },
+          'algorithm': {'name': algorithm.name, 'id': algorithm.id},
           'provingKey.length': provingKey.length,
           'r1cs.length': r1cs.length,
         },
@@ -204,35 +172,16 @@ class InitAlgorithmWorker {
     }
   }
 
-  static void _handleCommandsToIsolate(
-    ReceivePort receivePort,
-    SendPort sendPort,
-  ) async {
+  static void _handleCommandsToIsolate(ReceivePort receivePort, SendPort sendPort) async {
     receivePort.listen((message) async {
       if (message == 'shutdown') {
         receivePort.close();
         return;
       }
-      final (
-        id,
-        algorithm,
-        keyAssetUrl,
-        r1csAssetUrl,
-        httpCacheDirName,
-      ) = message as (
-        int,
-        ProverAlgorithmType,
-        String,
-        String,
-        String?,
-      );
+      final (id, algorithm, keyAssetUrl, r1csAssetUrl, httpCacheDirName) =
+          message as (int, ProverAlgorithmType, String, String, String?);
       try {
-        final initResponse = await initializeAlgorithm(
-          algorithm,
-          keyAssetUrl,
-          r1csAssetUrl,
-          httpCacheDirName,
-        );
+        final initResponse = await initializeAlgorithm(algorithm, keyAssetUrl, r1csAssetUrl, httpCacheDirName);
         sendPort.send((id, initResponse));
       } catch (e) {
         sendPort.send((id, RemoteError(e.toString(), '')));

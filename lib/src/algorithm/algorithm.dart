@@ -9,17 +9,9 @@ enum ProverAlgorithmType {
   AES_128_OPRF(4, 'aes128_oprf', 'aes-128-ctr-toprf'),
   AES_256_OPRF(5, 'aes256_oprf', 'aes-256-ctr-toprf');
 
-  static const Set<ProverAlgorithmType> oprf = {
-    CHACHA20_OPRF,
-    AES_128_OPRF,
-    AES_256_OPRF,
-  };
+  static const Set<ProverAlgorithmType> oprf = {CHACHA20_OPRF, AES_128_OPRF, AES_256_OPRF};
 
-  static const Set<ProverAlgorithmType> nonOprf = {
-    CHACHA20,
-    AES_128,
-    AES_256,
-  };
+  static const Set<ProverAlgorithmType> nonOprf = {CHACHA20, AES_128, AES_256};
 
   final int id;
   final String key;

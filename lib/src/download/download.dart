@@ -25,34 +25,58 @@ Directory _getCacheDir([String? cacheDirName]) {
 
 final _buildClientLogger = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator._buildClient');
 
-http.Client _buildClient([String? cacheDirName]) {
-  final cacheDir = _getCacheDir(cacheDirName);
-  _buildClientLogger.config('Building client with cache dir $cacheDir');
+http.Client _buildClientWithDefaultCaching() {
+  _buildClientLogger.config('Building client with default caching');
   if (Platform.isAndroid) {
     return cronet.CronetClient.fromCronetEngine(
-      cronet.CronetEngine.build(
-        cacheMode: cronet.CacheMode.disk,
-        // 200MB cache
-        cacheMaxSize: 200 * 1024 * 1024,
-        storagePath: cacheDir.path,
-        enableBrotli: true,
-        enableHttp2: true,
-        enableQuic: true,
-      ),
+      cronet.CronetEngine.build(enableBrotli: true, enableHttp2: true, enableQuic: true),
       closeEngine: true,
     );
   } else if (Platform.isIOS || Platform.isMacOS) {
     final config = cupertino.URLSessionConfiguration.defaultSessionConfiguration();
     config.discretionary = true;
-    config.cache = cupertino.URLCache.withCapacity(
-      memoryCapacity: 200 * 1024 * 1024,
-      diskCapacity: 200 * 1024 * 1024,
-      directory: cacheDir.uri,
-    );
     config.allowsCellularAccess = true;
     config.allowsConstrainedNetworkAccess = true;
     config.allowsExpensiveNetworkAccess = true;
     return cupertino.CupertinoClient.fromSessionConfiguration(config);
+  }
+  return http.Client();
+}
+
+http.Client _buildClient([String? cacheDirName]) {
+  final cacheDir = _getCacheDir(cacheDirName);
+  _buildClientLogger.config('Building client with cache dir $cacheDir');
+  try {
+    if (Platform.isAndroid) {
+      return cronet.CronetClient.fromCronetEngine(
+        cronet.CronetEngine.build(
+          cacheMode: cronet.CacheMode.disk,
+          // 200MB cache
+          cacheMaxSize: 200 * 1024 * 1024,
+          storagePath: cacheDir.path,
+          enableBrotli: true,
+          enableHttp2: true,
+          enableQuic: true,
+        ),
+        closeEngine: true,
+      );
+    } else if (Platform.isIOS || Platform.isMacOS) {
+      final config = cupertino.URLSessionConfiguration.defaultSessionConfiguration();
+      config.discretionary = true;
+      config.cache = cupertino.URLCache.withCapacity(
+        memoryCapacity: 200 * 1024 * 1024,
+        diskCapacity: 200 * 1024 * 1024,
+        directory: cacheDir.uri,
+      );
+      config.allowsCellularAccess = true;
+      config.allowsConstrainedNetworkAccess = true;
+      config.allowsExpensiveNetworkAccess = true;
+      return cupertino.CupertinoClient.fromSessionConfiguration(config);
+    }
+  } catch (e, s) {
+    _buildClientLogger.severe('Error building client', e, s);
+    // fallback with a client that has default caching mechanism
+    return _buildClientWithDefaultCaching();
   }
   return http.Client();
 }
@@ -80,46 +104,38 @@ extension _ReadUnstreamed on http.Client {
     final bodyBytes = await streamedResponse.stream.toBytes();
     final statusCode = streamedResponse.statusCode;
     if (statusCode >= 500) {
-      throw _RetryableHttpException(
-        _createMessage(streamedResponse, uri),
-        uri,
-      );
+      throw _RetryableHttpException(_createMessage(streamedResponse, uri), uri);
     }
     if (bodyBytes.isEmpty) {
-      throw _EmptyResponseException(
-        _createMessage(streamedResponse, uri),
-        uri,
-      );
+      throw _EmptyResponseException(_createMessage(streamedResponse, uri), uri);
     }
     return bodyBytes;
   }
 }
 
-/// Defaults to true to download with single connection on an isolate.
-/// Retries will use the same client.
-const _useSingleClient = bool.fromEnvironment(
-  'org.reclaimprotocol.gnark_zkoperator.USE_SINGLE_HTTP_CLIENT',
-  defaultValue: true,
-);
-
-http.Client? _commonClient;
+final Map<String, http.Client> _cachedClients = {};
 
 final _downloadWithHttpLogger = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.downloadWithHttp');
 
 Future<Uint8List?> downloadWithHttp(
   String url, {
-  bool useSingleClient = _useSingleClient,
-  // ignored when useSingleClient is false
-  // this should be unique for each isolate
+
+  /// When null, a new client is built for each use.
+  /// This should be unique for each isolate, otherwise it will cause an illegal state exception on android
+  /// and then a default caching mechanism on androids is used as a fallback.
   String? cacheDirName,
 }) async {
-  _downloadWithHttpLogger.config('Downloading $url with: cache dir $cacheDirName, useSingleClient $useSingleClient');
+  final isUsingCommonClient = cacheDirName != null;
+  _downloadWithHttpLogger.config(
+    'Downloading $url with: cache dir $cacheDirName, isUsingCommonClient $isUsingCommonClient',
+  );
   final uri = Uri.parse(url);
-  final client = useSingleClient
-      // Only build the client once if [_commonClient] is null
-      ? (_commonClient ??= _buildClient(cacheDirName))
-      // Build a new client for each download
-      : _buildClient();
+  final client =
+      isUsingCommonClient
+          // Only build the client once if [_cachedClients[cacheDirName]] is null
+          ? (_cachedClients[cacheDirName] ??= _buildClient(cacheDirName))
+          // Build a new client for each download
+          : _buildClient();
 
   try {
     final response = await retry(
@@ -128,17 +144,18 @@ Future<Uint8List?> downloadWithHttp(
       },
       // Retry on SocketException or TimeoutException or _RetryableHttpException
       retryIf: (e) {
-        return e is SocketException || e is TimeoutException || e is _RetryableHttpException || e is _EmptyResponseException;
+        return e is SocketException ||
+            e is TimeoutException ||
+            e is _RetryableHttpException ||
+            e is _EmptyResponseException;
       },
     );
-    if (!useSingleClient) {
-      client.close();
-    }
     return response;
   } catch (_) {
-    if (!useSingleClient) {
+    rethrow;
+  } finally {
+    if (!isUsingCommonClient) {
       client.close();
     }
-    rethrow;
   }
 }

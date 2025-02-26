@@ -16,12 +16,7 @@ class _LogRecordIsolateMessage {
   });
 
   static void log(_LogRecordIsolateMessage data, [String? debugLabel = '']) {
-    Logger(data.loggerName).log(
-      data.level,
-      '($debugLabel) ${data.message}',
-      data.error,
-      data.stackTrace,
-    );
+    Logger(data.loggerName).log(data.level, '($debugLabel) ${data.message}', data.error, data.stackTrace);
   }
 
   static void setup(void Function(_LogRecordIsolateMessage) cb) {
@@ -29,13 +24,15 @@ class _LogRecordIsolateMessage {
     Logger('')
       ..level = Level.ALL
       ..onRecord.listen((record) {
-        cb(_LogRecordIsolateMessage(
-          loggerName: record.loggerName,
-          message: record.message,
-          error: record.error?.toString(),
-          stackTrace: record.stackTrace,
-          level: record.level,
-        ));
+        cb(
+          _LogRecordIsolateMessage(
+            loggerName: record.loggerName,
+            message: record.message,
+            error: record.error?.toString(),
+            stackTrace: record.stackTrace,
+            level: record.level,
+          ),
+        );
       });
   }
 }

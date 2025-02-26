@@ -10,17 +10,13 @@ class KeyAlgorithmAssetUrls {
   const KeyAlgorithmAssetUrls(this.keyAssetUrl, this.r1csAssetUrl);
 }
 
-typedef ProverAlgorithmAssetUrlsProvider = KeyAlgorithmAssetUrls Function(
-  ProverAlgorithmType algorithm,
-);
+typedef ProverAlgorithmAssetUrlsProvider = KeyAlgorithmAssetUrls Function(ProverAlgorithmType algorithm);
 
 /// A cache to store the initialization status of different key algorithm types.
 /// The key is the [ProverAlgorithmType] and the value is a boolean indicating
 /// whether the initialization was successful.
 final _algorithmInitializerFutureCache = <ProverAlgorithmType, Future<bool>?>{};
-final _initAlgorithmWorkerFuture = InitAlgorithmWorker.spawn(
-  'prover_http_cache',
-);
+final _initAlgorithmWorkerFuture = InitAlgorithmWorker.spawn('prover_http_cache');
 
 final _initializerLog = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.initializer');
 
@@ -31,10 +27,7 @@ ValueListenable<Set<ProverAlgorithmType>> get initializedAlgorithmsNotifier {
   return _initializedAlgorithms;
 }
 
-Future<bool> _initialize(
-  ProverAlgorithmType algorithm,
-  ProverAlgorithmAssetUrlsProvider getAssetUrls,
-) async {
+Future<bool> _initialize(ProverAlgorithmType algorithm, ProverAlgorithmAssetUrlsProvider getAssetUrls) async {
   if (_algorithmInitializerFutureCache[algorithm] == null) {
     final completer = Completer<bool>();
     _algorithmInitializerFutureCache[algorithm] = completer.future;
@@ -45,11 +38,7 @@ Future<bool> _initialize(
       final stopwatch = Stopwatch();
       stopwatch.start();
       _initializerLog.info('Initializing algorithm $algorithm');
-      await worker.initializeAlgorithmInBackground(
-        algorithm,
-        assetUrls.keyAssetUrl,
-        assetUrls.r1csAssetUrl,
-      );
+      await worker.initializeAlgorithmInBackground(algorithm, assetUrls.keyAssetUrl, assetUrls.r1csAssetUrl);
       stopwatch.stop();
       _initializerLog.info('Initialized algorithm $algorithm in ${stopwatch.elapsed}');
       completer.complete(true);
@@ -105,28 +94,23 @@ class ProverAlgorithmInitializer {
 
   /// Initializes the prover by loading the necessary algorithms asynchronously.
   Future<void> _initializeAllAlgorithms() async {
-    final canDownloadChachaOprfWithNonOprf = downloadPriority == ProverAlgorithmInitializationPriority.chachaOprfWithNonOprf;
+    final canDownloadChachaOprfWithNonOprf =
+        downloadPriority == ProverAlgorithmInitializationPriority.chachaOprfWithNonOprf;
 
     // Download and initialize in order of importance without starving event queue.
     // TODO: Find a better concurrency model to do all parallely without starving event queue.
 
-    await Future.wait([
-      ProverAlgorithmType.CHACHA20,
-      if (canDownloadChachaOprfWithNonOprf) ProverAlgorithmType.CHACHA20_OPRF,
-    ].map(ensureInitialized));
-
-    await Future.wait([
-      ProverAlgorithmType.AES_128,
-      ProverAlgorithmType.AES_256,
-    ].map(ensureInitialized));
-
-    await ensureInitialized(
-      ProverAlgorithmType.CHACHA20_OPRF,
+    await Future.wait(
+      [
+        ProverAlgorithmType.CHACHA20,
+        if (canDownloadChachaOprfWithNonOprf) ProverAlgorithmType.CHACHA20_OPRF,
+      ].map(ensureInitialized),
     );
 
-    await Future.wait([
-      ProverAlgorithmType.AES_128_OPRF,
-      ProverAlgorithmType.AES_256_OPRF,
-    ].map(ensureInitialized));
+    await Future.wait([ProverAlgorithmType.AES_128, ProverAlgorithmType.AES_256].map(ensureInitialized));
+
+    await ensureInitialized(ProverAlgorithmType.CHACHA20_OPRF);
+
+    await Future.wait([ProverAlgorithmType.AES_128_OPRF, ProverAlgorithmType.AES_256_OPRF].map(ensureInitialized));
   }
 }

@@ -63,21 +63,13 @@ class ReclaimZkOperator extends ZkOperator {
     ProverAlgorithmInitializationPriority priority = ProverAlgorithmInitializationPriority.nonOprfFirst,
   ]) async {
     if (_cachedInstances[getAssetUrls] == null) {
-      _cachedInstances[getAssetUrls] = ReclaimZkOperator._(ProverAlgorithmInitializer(
-        getAssetUrls,
-        priority,
-      ));
+      _cachedInstances[getAssetUrls] = ReclaimZkOperator._(ProverAlgorithmInitializer(getAssetUrls, priority));
     }
     return _cachedInstances[getAssetUrls]!;
   }
 
-  static KeyAlgorithmAssetUrls defaultProverAlgorithmAssetUrlsProvider(
-    ProverAlgorithmType algorithm,
-  ) {
-    return KeyAlgorithmAssetUrls(
-      algorithm.defaultKeyAssetUrl,
-      algorithm.defaultR1CSAssetUrl,
-    );
+  static KeyAlgorithmAssetUrls defaultProverAlgorithmAssetUrlsProvider(ProverAlgorithmType algorithm) {
+    return KeyAlgorithmAssetUrls(algorithm.defaultKeyAssetUrl, algorithm.defaultR1CSAssetUrl);
   }
 
   final ProverAlgorithmInitializer initializer;
@@ -115,18 +107,14 @@ class ReclaimZkOperator extends ZkOperator {
   /// Read more about it in reclaim_flutter_sdk's README and reclaim_flutter_sdk/example's README.md.
   @override
   Future<String> computeAttestorProof(String fnName, List<dynamic> args) async {
-    final logger = Logger(
-      'reclaim_flutter_sdk.reclaim_gnark_zkoperator.computeAttestorProof.$fnName',
-    );
+    final logger = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.computeAttestorProof.$fnName');
 
     final String response = await () async {
       switch (fnName) {
         case 'groth16Prove':
           final bytesInput = base64.decode(args[0]['value']);
           if (!_hasAllAlgorithmsInitialized) {
-            final algorithm = identifyAlgorithmFromZKOperationRequest(
-              bytesInput,
-            );
+            final algorithm = identifyAlgorithmFromZKOperationRequest(bytesInput);
             if (algorithm != null) {
               logger.finest('ensuring prover algorithm "$algorithm" is ready');
               // ensure algorithm is initialized
@@ -142,23 +130,14 @@ class ReclaimZkOperator extends ZkOperator {
         case 'finaliseOPRF':
           final [serverPublicKey, request, responses] = args;
           final jsonString = json.encode(
-            _replaceBase64Json({
-              'serverPublicKey': serverPublicKey,
-              'request': request,
-              'responses': responses,
-            }),
+            _replaceBase64Json({'serverPublicKey': serverPublicKey, 'request': request, 'responses': responses}),
           );
           final Uint8List bytesInput = utf8.encode(jsonString);
           final response = await finaliseOPRF(bytesInput);
           return json.encode(json.decode(response)['output']);
         case 'generateOPRFRequestData':
           final [data, domainSeparator] = args;
-          final jsonString = json.encode(
-            _replaceBase64Json({
-              'data': data,
-              'domainSeparator': domainSeparator,
-            }),
-          );
+          final jsonString = json.encode(_replaceBase64Json({'data': data, 'domainSeparator': domainSeparator}));
           final Uint8List bytesInput = utf8.encode(jsonString);
           final response = await generateOPRFRequestData(bytesInput);
           return response;

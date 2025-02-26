@@ -20,7 +20,8 @@ class GnarkProverBindings {
   GnarkProverBindings(ffi.DynamicLibrary dynamicLibrary) : _lookup = dynamicLibrary.lookup;
 
   /// The symbols are looked up with [lookup].
-  GnarkProverBindings.fromLookup(ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup) : _lookup = lookup;
+  GnarkProverBindings.fromLookup(ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup)
+    : _lookup = lookup;
 
   void enforce_binding() {
     return _enforce_binding();
@@ -29,12 +30,8 @@ class GnarkProverBindings {
   late final _enforce_bindingPtr = _lookup<ffi.NativeFunction<ffi.Void Function()>>('enforce_binding');
   late final _enforce_binding = _enforce_bindingPtr.asFunction<void Function()>();
 
-  void Free(
-    ffi.Pointer pointer,
-  ) {
-    return _Free(
-      pointer,
-    );
+  void Free(ffi.Pointer pointer) {
+    return _Free(pointer);
   }
 
   late final _FreePtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer)>>('Free');
@@ -47,38 +44,26 @@ class GnarkProverBindings {
   late final _ProvePtr = _lookup<ffi.NativeFunction<Prove_return Function(GoSlice)>>('Prove');
   late final _Prove = _ProvePtr.asFunction<Prove_return Function(GoSlice)>();
 
-  int InitAlgorithm(
-    int algorithmID,
-    GoSlice provingKey,
-    GoSlice r1cs,
-  ) {
-    return _InitAlgorithm(
-      algorithmID,
-      provingKey,
-      r1cs,
-    );
+  int InitAlgorithm(int algorithmID, GoSlice provingKey, GoSlice r1cs) {
+    return _InitAlgorithm(algorithmID, provingKey, r1cs);
   }
 
-  late final _InitAlgorithmPtr = _lookup<ffi.NativeFunction<GoUint8 Function(GoUint8, GoSlice, GoSlice)>>('InitAlgorithm');
+  late final _InitAlgorithmPtr = _lookup<ffi.NativeFunction<GoUint8 Function(GoUint8, GoSlice, GoSlice)>>(
+    'InitAlgorithm',
+  );
   late final _InitAlgorithm = _InitAlgorithmPtr.asFunction<int Function(int, GoSlice, GoSlice)>();
 
-  GenerateOPRFRequestData_return GenerateOPRFRequestData(
-    GoSlice params,
-  ) {
-    return _GenerateOPRFRequestData(
-      params,
-    );
+  GenerateOPRFRequestData_return GenerateOPRFRequestData(GoSlice params) {
+    return _GenerateOPRFRequestData(params);
   }
 
-  late final _GenerateOPRFRequestDataPtr = _lookup<ffi.NativeFunction<GenerateOPRFRequestData_return Function(GoSlice)>>('GenerateOPRFRequestData');
-  late final _GenerateOPRFRequestData = _GenerateOPRFRequestDataPtr.asFunction<GenerateOPRFRequestData_return Function(GoSlice)>();
+  late final _GenerateOPRFRequestDataPtr =
+      _lookup<ffi.NativeFunction<GenerateOPRFRequestData_return Function(GoSlice)>>('GenerateOPRFRequestData');
+  late final _GenerateOPRFRequestData =
+      _GenerateOPRFRequestDataPtr.asFunction<GenerateOPRFRequestData_return Function(GoSlice)>();
 
-  TOPRFFinalize_return TOPRFFinalize(
-    GoSlice params,
-  ) {
-    return _TOPRFFinalize(
-      params,
-    );
+  TOPRFFinalize_return TOPRFFinalize(GoSlice params) {
+    return _TOPRFFinalize(params);
   }
 
   late final _TOPRFFinalizePtr = _lookup<ffi.NativeFunction<TOPRFFinalize_return Function(GoSlice)>>('TOPRFFinalize');

@@ -29,18 +29,11 @@ class _ProveWorker {
     final connection = Completer<(ReceivePort, SendPort)>.sync();
     initPort.handler = (initialMessage) {
       final commandPort = initialMessage as SendPort;
-      connection.complete((
-        ReceivePort.fromRawReceivePort(initPort),
-        commandPort,
-      ));
+      connection.complete((ReceivePort.fromRawReceivePort(initPort), commandPort));
     };
     // Spawn the isolate.
     try {
-      await Isolate.spawn(
-        _startRemoteIsolate,
-        (initPort.sendPort),
-        debugName: _debugLabel,
-      );
+      await Isolate.spawn(_startRemoteIsolate, (initPort.sendPort), debugName: _debugLabel);
     } on Object {
       initPort.close();
       rethrow;
@@ -74,17 +67,11 @@ class _ProveWorker {
   ) async {
     final inputBytesGoPointer = _GoSliceExtension.fromUint8List(inputBytes);
 
-    _logger.finest(
-      '[$id] Running prove for input of size ${inputBytes.lengthInBytes} bytes',
-    );
+    _logger.finest('[$id] Running prove for input of size ${inputBytes.lengthInBytes} bytes');
     final stopwatch = Stopwatch()..start();
-    final proof = _bindings.Prove(
-      inputBytesGoPointer.ref,
-    );
+    final proof = _bindings.Prove(inputBytesGoPointer.ref);
     stopwatch.stop();
-    _logger.finest(
-      '[$id] Prove completed, elapsed ${stopwatch.elapsed}',
-    );
+    _logger.finest('[$id] Prove completed, elapsed ${stopwatch.elapsed}');
 
     // freeing up memory for inputBytesGoPointer
     calloc.free(inputBytesGoPointer.ref.data);
@@ -108,10 +95,7 @@ class _ProveWorker {
     return proofStr;
   }
 
-  static void _handleCommandsToIsolate(
-    ReceivePort receivePort,
-    SendPort sendPort,
-  ) async {
+  static void _handleCommandsToIsolate(ReceivePort receivePort, SendPort sendPort) async {
     receivePort.listen((message) async {
       if (message == 'shutdown') {
         receivePort.close();

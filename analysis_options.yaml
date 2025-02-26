@@ -3,7 +3,7 @@ analyzer:
   errors:
     constant_identifier_names: ignore
 formatter:
-  page_width: 150
+  page_width: 120
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
