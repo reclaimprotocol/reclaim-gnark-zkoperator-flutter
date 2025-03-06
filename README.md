@@ -209,3 +209,21 @@ Regenerate the bindings by running `make gen_bindings` inside `src` directory.
 The function `initializeSync` must be called atleast once before using any other function from the library.
 
 The function `proveSync` can be directly invoked from any isolate for generating proof. If this results in dropping frames in Flutter applications, use `proveAsync` which invokes proveSync on a helper isolate.
+
+## Experimental - Web
+
+### How to use the generated wasm from javascript?
+
+```js
+const fs = require('node:fs');
+const _wasm_exec = require('./wasm_exec.js');
+const url = "libgnarkprover.wasm";
+const main = async () => {
+    const wasmBuffer = fs.readFileSync(url);
+    const go = new globalThis.Go();
+    const { instance } = await WebAssembly.instantiate(wasmBuffer, go.importObject);
+    go.run(instance);
+    enforce_binding();
+};
+main();
+```

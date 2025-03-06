@@ -6,6 +6,7 @@ BUILD_DIR:=$(ROOT_DIR)/build
 
 IOS_OUT:=$(PROJECT_DIR)/ios
 ANDROID_OUT:=$(PROJECT_DIR)/android/src/main/jniLibs
+WEB_OUT:=$(PROJECT_DIR)/build/web
 
 # Could be ANDROID_NDK_HOME=$(ANDROID_HOME)/ndk/23.1.7779620/toolchains/llvm/prebuilt/darwin-x86_64
 ifeq ($(findstring android,$(MAKECMDGOALS)),android)
@@ -20,6 +21,7 @@ ifndef GO_GNARKPROVER_DIR
 $(error GO_GNARKPROVER_DIR is not set)
 endif
 GO_TARGET_LIB:=$(GO_GNARKPROVER_DIR)/libraries/prover/libprove.go
+GO_TARGET_LIB_WEB:=$(GO_GNARKPROVER_DIR)/libraries/prover/libprove_web.go
 
 # init
 # Create a directory for storing all intermediate build files
@@ -134,6 +136,15 @@ ios: ios-x86_64-sim ios-arm64-sim ios-arm64
 
 	# Clean up all intermediate build files
 	rm -rf ${BUILD_DIR}
+
+wasm:
+	CGO_ENABLED=1 \
+	GOOS=js \
+	GOARCH=wasm \
+	mkdir -p $(WEB_OUT)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '-s -w' -o $(WEB_OUT)/${LIB_NAME}.wasm $(GO_TARGET_LIB_WEB)
+	@# lib instead of misc in go 1.24
+	cp "$$(go env GOROOT)/misc/wasm/wasm_exec.js" "$(WEB_OUT)/wasm_exec.js"
 
 gen_bindings:
 	rm -f ${BUILD_DIR}/${LIB_NAME}.*
