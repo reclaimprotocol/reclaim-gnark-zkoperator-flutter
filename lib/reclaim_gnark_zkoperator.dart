@@ -8,6 +8,7 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
+import 'package:measure_performance/measure_performance.dart';
 
 import 'src/algorithm/algorithm.dart';
 import 'src/algorithm/assets.dart';
@@ -106,15 +107,20 @@ class ReclaimZkOperator extends ZkOperator {
   /// Note: Use of `computeAttestorProof` could be disabled by default in the reclaim_flutter_sdk as this is still experimental.
   /// Read more about it in reclaim_flutter_sdk's README and reclaim_flutter_sdk/example's README.md.
   @override
-  Future<String> computeAttestorProof(String fnName, List<dynamic> args) async {
+  Future<String> computeAttestorProof(
+    String fnName,
+    List<dynamic> args, {
+    void Function(ProverAlgorithmType?, PerformanceReport)? onPerformanceReport,
+  }) async {
     final logger = Logger('reclaim_flutter_sdk.reclaim_gnark_zkoperator.computeAttestorProof.$fnName');
 
     final String response = await () async {
       switch (fnName) {
         case 'groth16Prove':
           final bytesInput = base64.decode(args[0]['value']);
+          ProverAlgorithmType? algorithm;
           if (!_hasAllAlgorithmsInitialized) {
-            final algorithm = identifyAlgorithmFromZKOperationRequest(bytesInput);
+            algorithm = identifyAlgorithmFromZKOperationRequest(bytesInput);
             if (algorithm != null) {
               logger.finest('ensuring prover algorithm "$algorithm" is ready');
               // ensure algorithm is initialized
@@ -126,7 +132,16 @@ class ReclaimZkOperator extends ZkOperator {
           } else {
             logger.finest('all prover algorithms should be ready');
           }
-          return await groth16Prove(bytesInput);
+          return groth16Prove(
+            bytesInput,
+            onPerformanceReport:
+                onPerformanceReport == null
+                    ? null
+                    : (report) {
+                      algorithm ??= identifyAlgorithmFromZKOperationRequest(bytesInput);
+                      onPerformanceReport(algorithm, report);
+                    },
+          );
         case 'finaliseOPRF':
           final [serverPublicKey, request, responses] = args;
           final jsonString = json.encode(
@@ -149,10 +164,10 @@ class ReclaimZkOperator extends ZkOperator {
   }
 
   @override
-  Future<String> groth16Prove(Uint8List bytes) async {
+  Future<String> groth16Prove(Uint8List bytes, {OnProofPerformanceReportCallback? onPerformanceReport}) async {
     final proveWorkerFuture = _proveWorkerFuture ??= _ProveWorker.spawn();
     final worker = await proveWorkerFuture;
-    return worker.prove(bytes);
+    return worker.prove(bytes, onPerformanceReport: onPerformanceReport);
   }
 
   Future<_TOPRFFinalizeWorker>? _toprfFinalizeWorkerFuture;

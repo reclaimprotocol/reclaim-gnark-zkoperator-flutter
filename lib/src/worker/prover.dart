@@ -1,5 +1,8 @@
 part of '../../reclaim_gnark_zkoperator.dart';
 
+typedef ProofResult = (String, PerformanceReport);
+typedef OnProofPerformanceReportCallback = void Function(PerformanceReport);
+
 class _ProveWorker {
   final SendPort _commands;
   final ReceivePort _responses;
@@ -13,14 +16,16 @@ class _ProveWorker {
   final Map<int, Completer<Object?>> _activeRequests = {};
   int _idCounter = 0;
 
-  Future<String> prove(Uint8List inputBytes) async {
+  Future<String> prove(Uint8List inputBytes, {OnProofPerformanceReportCallback? onPerformanceReport}) async {
     if (_closed) throw StateError('$_debugLabel is disposed');
 
     final completer = Completer<Object?>.sync();
     final id = _idCounter++;
     _activeRequests[id] = completer;
     _commands.send((id, inputBytes));
-    return await completer.future as String;
+    final (proof, report) = await completer.future as ProofResult;
+    onPerformanceReport?.call(report);
+    return proof;
   }
 
   static Future<_ProveWorker> spawn() async {
@@ -60,7 +65,7 @@ class _ProveWorker {
     }
   }
 
-  static Future<String> _onProveInIsolate(
+  static Future<ProofResult> _onProveInIsolate(
     // we'll use this to identify proof in logs
     int id,
     Uint8List inputBytes,
@@ -68,10 +73,11 @@ class _ProveWorker {
     final inputBytesGoPointer = _GoSliceExtension.fromUint8List(inputBytes);
 
     _logger.finest('[$id] Running prove for input of size ${inputBytes.lengthInBytes} bytes');
-    final stopwatch = Stopwatch()..start();
+    final measure = MeasurePerformance();
+    measure.start();
     final proof = _bindings.Prove(inputBytesGoPointer.ref);
-    stopwatch.stop();
-    _logger.finest('[$id] Prove completed, elapsed ${stopwatch.elapsed}');
+    measure.stop();
+    _logger.finest('[$id] Prove completed');
 
     // freeing up memory for inputBytesGoPointer
     calloc.free(inputBytesGoPointer.ref.data);
@@ -92,7 +98,7 @@ class _ProveWorker {
     }
 
     // returning the json string response
-    return proofStr;
+    return (proofStr, measure.getReport());
   }
 
   static void _handleCommandsToIsolate(ReceivePort receivePort, SendPort sendPort) async {
