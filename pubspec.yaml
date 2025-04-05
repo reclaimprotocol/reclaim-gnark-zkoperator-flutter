@@ -19,7 +19,7 @@ dependencies:
   cupertino_http: ^2.0.2
   retry: ^3.1.2
   path: ^1.9.0
-  measure_performance: ^1.0.0
+  measure_performance: ^1.1.0
 
 dev_dependencies:
   ffigen: ^17.0.0
