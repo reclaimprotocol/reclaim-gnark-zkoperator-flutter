@@ -40,4 +40,4 @@ curl -L \
   -H "Authorization: Bearer $PACkAGE_CLONE_PASSWD" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   https://api.github.com/repos/reclaimprotocol/reclaim-gnark-zkoperator-flutter/pulls \
-  -d '{"title":"Update [CI] native libraries for Android & iOS","body":"Updated native libraries built by CI from latest changes in the zk-symmetric-crypto repository","head":"'$BUILD_BRANCH'","base":"main"}'
+  -d '{"title":"Update [CI] native libraries for Android & iOS","body":"Updated native libraries built by CI from latest changes in the [zk-symmetric-crypto/gnark](https://github.com/reclaimprotocol/zk-symmetric-crypto/tree/main/gnark) repository","head":"'$BUILD_BRANCH'","base":"main"}'
