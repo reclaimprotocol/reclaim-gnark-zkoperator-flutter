@@ -1,6 +1,6 @@
 # reclaim_gnark_zkoperator
 
-Reclaim Protocol's implementation of Zero-Knowledge (ZK) SNARK Operator powered by a Gnark Prover library for creating ZK-SNARK Proofs.
+Reclaim Protocol's implementation of Zero-Knowledge (ZK) SNARK Operator powered by a Gnark Prover library for creating ZK-SNARK Proofs on Flutter.
 
 ## Getting Started
 
