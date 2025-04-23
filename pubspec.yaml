@@ -22,7 +22,7 @@ dependencies:
   measure_performance: ^1.1.0
 
 dev_dependencies:
-  ffigen: ^17.0.0
+  ffigen: ^18.1.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
