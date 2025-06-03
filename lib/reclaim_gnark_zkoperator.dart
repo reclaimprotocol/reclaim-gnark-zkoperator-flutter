@@ -164,6 +164,26 @@ class ReclaimZkOperator extends ZkOperator {
   }
 
   @override
+  ProverAlgorithmType? getAlgorithmFromOperationRequest(String fnName, List<dynamic> args) {
+    try {
+      switch (fnName) {
+        case 'groth16Prove':
+          final bytesInput = base64.decode(args[0]['value']);
+          return identifyAlgorithmFromZKOperationRequest(bytesInput);
+      }
+    } catch (e, s) {
+      _logger.warning('Failed to get algorithm from operation request', e, s);
+    }
+    return null;
+  }
+
+  @override
+  Future<bool> ensureInitialized(ProverAlgorithmType algorithm) async {
+    if (_hasAllAlgorithmsInitialized) return true;
+    return initializer.ensureInitialized(algorithm);
+  }
+
+  @override
   Future<String> groth16Prove(Uint8List bytes, {OnProofPerformanceReportCallback? onPerformanceReport}) async {
     final proveWorkerFuture = _proveWorkerFuture ??= _ProveWorker.spawn();
     final worker = await proveWorkerFuture;
