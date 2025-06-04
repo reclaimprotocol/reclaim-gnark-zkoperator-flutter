@@ -10,7 +10,6 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:measure_performance/measure_performance.dart';
 
-import 'src/algorithm/algorithm.dart';
 import 'src/algorithm/assets.dart';
 import 'src/algorithm/utils.dart';
 import 'src/download/download.dart';
@@ -61,10 +60,9 @@ class ReclaimZkOperator extends ZkOperator {
   /// [ReclaimZkOperator._initializeAllAlgorithms] and use [ReclaimZkOperator] later when [_initializeAllAlgorithms] completes.
   static Future<ReclaimZkOperator> getInstance([
     ProverAlgorithmAssetUrlsProvider getAssetUrls = defaultProverAlgorithmAssetUrlsProvider,
-    ProverAlgorithmInitializationPriority priority = ProverAlgorithmInitializationPriority.nonOprfFirst,
   ]) async {
     if (_cachedInstances[getAssetUrls] == null) {
-      _cachedInstances[getAssetUrls] = ReclaimZkOperator._(ProverAlgorithmInitializer(getAssetUrls, priority));
+      _cachedInstances[getAssetUrls] = ReclaimZkOperator._(ProverAlgorithmInitializer(getAssetUrls));
     }
     return _cachedInstances[getAssetUrls]!;
   }
