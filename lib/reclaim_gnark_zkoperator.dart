@@ -207,6 +207,23 @@ class ReclaimZkOperator extends ZkOperator {
   }
 
   @override
+  Future<bool> isPlatformSupported() async {
+    // check if we are running on a 64 bit runtime.
+    // parses the dart runtime platform version string and checks if the build is 64 bit.
+    final version = Platform.version;
+    try {
+      final index = version.indexOf('"');
+      final lastIndex = version.lastIndexOf('"');
+      final versionString = version.substring(index + 1, lastIndex);
+      final [_, runtimeArch] = versionString.split('_');
+      return runtimeArch.contains('64');
+    } catch (e, s) {
+      _logger.warning('Failed to check if platform is supported for runtime version: $version', e, s);
+      return true;
+    }
+  }
+
+  @override
   Future<void> close() async {
     final proverWorkerFuture = _proveWorkerFuture;
     if (proverWorkerFuture != null) {
