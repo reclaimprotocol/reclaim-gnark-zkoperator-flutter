@@ -68,7 +68,7 @@ class ReclaimZkOperator extends ZkOperator {
   }
 
   static KeyAlgorithmAssetUrls defaultProverAlgorithmAssetUrlsProvider(ProverAlgorithmType algorithm) {
-    return KeyAlgorithmAssetUrls(algorithm.defaultKeyAssetUrl, algorithm.defaultR1CSAssetUrl);
+    return KeyAlgorithmAssetUrls.mirrors(algorithm.defaultKeyAssetUrls, algorithm.defaultR1CSAssetUrls);
   }
 
   final ProverAlgorithmInitializer initializer;
