@@ -120,15 +120,15 @@ class ReclaimZkOperator extends ZkOperator {
           if (!_hasAllAlgorithmsInitialized) {
             algorithm = identifyAlgorithmFromZKOperationRequest(bytesInput);
             if (algorithm != null) {
-              logger.finest('ensuring prover algorithm "$algorithm" is ready');
+              logger.info('ensuring prover algorithm "$algorithm" is ready');
               // ensure algorithm is initialized
               await initializer.ensureInitialized(algorithm);
-              logger.finest('prover algorithm "$algorithm" is ready');
+              logger.info('prover algorithm "$algorithm" is ready');
             } else {
               logger.finest('no algorithm found in the zk operation request');
             }
           } else {
-            logger.finest('all prover algorithms should be ready');
+            logger.info('all prover algorithms should be ready');
           }
           return groth16Prove(
             bytesInput,
