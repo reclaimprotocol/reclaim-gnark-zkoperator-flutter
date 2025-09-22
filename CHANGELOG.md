@@ -1,3 +1,8 @@
+## 1.5.1
+
+* Add tests for identifyAlgorithmFromZKOperationRequest
+* Update logs to show which algorithm maybe used in proof generation
+
 ## 1.5.0
 
 * Refactor all isolate workers to be a runnable and add `WorkerManager` that manages background worker with runnables and runs them on isolate
