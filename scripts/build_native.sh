@@ -22,9 +22,6 @@ fi
 
 ./scripts/build_lib.sh
 
-# cleanup
-rm -rf $GO_GNARKPROVER_DIR;
-
 echo "Updating repository with new native libraries";
 
 bash ./scripts/update_version.sh --minor;
