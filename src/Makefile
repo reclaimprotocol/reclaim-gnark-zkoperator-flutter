@@ -48,6 +48,10 @@ ifndef NATIVE_DEBUG
 LDFLAGS+= -w
 endif
 
+# Optimization flags for size reduction
+GCFLAGS=-trimpath -dwarf=false
+BUILD_FLAGS=-buildmode=c-shared -trimpath -installsuffix cgo
+
 android-armv7a:
 	CGO_ENABLED=1 \
 	GOOS=android \
@@ -55,7 +59,7 @@ android-armv7a:
 	GOARM=7 \
 	CC=$(NDK_BIN)/armv7a-linux-androideabi21-clang \
 	CXX=$(NDK_BIN)/armv7a-linux-androideabi21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '${LDFLAGS}' -buildmode=c-shared -o $(ANDROID_OUT)/armeabi-v7a/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} ${BUILD_FLAGS} -gcflags '${GCFLAGS}' -ldflags '${LDFLAGS}' -o $(ANDROID_OUT)/armeabi-v7a/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 android-arm64:
 	CGO_ENABLED=1 \
@@ -63,7 +67,7 @@ android-arm64:
 	GOARCH=arm64 \
 	CC=$(NDK_BIN)/aarch64-linux-android21-clang \
 	CXX=$(NDK_BIN)/aarch64-linux-android21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '${LDFLAGS}' -buildmode=c-shared -o $(ANDROID_OUT)/arm64-v8a/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} ${BUILD_FLAGS} -gcflags '${GCFLAGS}' -ldflags '${LDFLAGS}' -o $(ANDROID_OUT)/arm64-v8a/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 android-x86:
 	CGO_ENABLED=1 \
@@ -71,7 +75,7 @@ android-x86:
 	GOARCH=386 \
 	CC=$(NDK_BIN)/i686-linux-android21-clang \
 	CXX=$(NDK_BIN)/i686-linux-android21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '${LDFLAGS}' -buildmode=c-shared -o $(ANDROID_OUT)/x86/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} ${BUILD_FLAGS} -gcflags '${GCFLAGS}' -ldflags '${LDFLAGS}' -o $(ANDROID_OUT)/x86/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 android-x86_64:
 	CGO_ENABLED=1 \
@@ -79,7 +83,7 @@ android-x86_64:
 	GOARCH=amd64 \
 	CC=$(NDK_BIN)/x86_64-linux-android21-clang \
 	CXX=$(NDK_BIN)/x86_64-linux-android21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '${LDFLAGS}' -buildmode=c-shared -o $(ANDROID_OUT)/x86_64/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} ${BUILD_FLAGS} -gcflags '${GCFLAGS}' -ldflags '${LDFLAGS}' -o $(ANDROID_OUT)/x86_64/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 ios-x86_64-sim:
 	GOARCH=amd64 \
