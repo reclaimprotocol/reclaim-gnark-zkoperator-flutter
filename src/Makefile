@@ -41,6 +41,13 @@ else
 $(info "Building libraries with embedded circuits. Set 'USE_LIB_COMPILED' to build libraries that compiles circuits on the fly.")
 endif
 
+# Debug flags
+# Strip DWARF debug info unless NATIVE_DEBUG is set
+LDFLAGS=-s
+ifndef NATIVE_DEBUG
+LDFLAGS+= -w
+endif
+
 android-armv7a:
 	CGO_ENABLED=1 \
 	GOOS=android \
@@ -48,7 +55,7 @@ android-armv7a:
 	GOARM=7 \
 	CC=$(NDK_BIN)/armv7a-linux-androideabi21-clang \
 	CXX=$(NDK_BIN)/armv7a-linux-androideabi21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '-s -w' -buildmode=c-shared -o $(ANDROID_OUT)/armeabi-v7a/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '${LDFLAGS}' -buildmode=c-shared -o $(ANDROID_OUT)/armeabi-v7a/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 android-arm64:
 	CGO_ENABLED=1 \
@@ -56,7 +63,7 @@ android-arm64:
 	GOARCH=arm64 \
 	CC=$(NDK_BIN)/aarch64-linux-android21-clang \
 	CXX=$(NDK_BIN)/aarch64-linux-android21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '-s -w' -buildmode=c-shared -o $(ANDROID_OUT)/arm64-v8a/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '${LDFLAGS}' -buildmode=c-shared -o $(ANDROID_OUT)/arm64-v8a/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 android-x86:
 	CGO_ENABLED=1 \
@@ -64,7 +71,7 @@ android-x86:
 	GOARCH=386 \
 	CC=$(NDK_BIN)/i686-linux-android21-clang \
 	CXX=$(NDK_BIN)/i686-linux-android21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '-s -w' -buildmode=c-shared -o $(ANDROID_OUT)/x86/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '${LDFLAGS}' -buildmode=c-shared -o $(ANDROID_OUT)/x86/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 android-x86_64:
 	CGO_ENABLED=1 \
@@ -72,7 +79,7 @@ android-x86_64:
 	GOARCH=amd64 \
 	CC=$(NDK_BIN)/x86_64-linux-android21-clang \
 	CXX=$(NDK_BIN)/x86_64-linux-android21-clang++ \
-	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '-s -w' -buildmode=c-shared -o $(ANDROID_OUT)/x86_64/${LIB_NAME}.so $(GO_TARGET_LIB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '${LDFLAGS}' -buildmode=c-shared -o $(ANDROID_OUT)/x86_64/${LIB_NAME}.so $(GO_TARGET_LIB)
 
 ios-x86_64-sim:
 	GOARCH=amd64 \
@@ -82,6 +89,7 @@ ios-x86_64-sim:
 	GO_TARGET_LIB=${GO_TARGET_LIB} \
 	BUILD_DIR=${BUILD_DIR} \
 	GOX_TAGS=${GOX_TAGS} \
+	LDFLAGS='${LDFLAGS}' \
 	./build_ios.sh
 
 ios-arm64-sim:
@@ -92,6 +100,7 @@ ios-arm64-sim:
 	GO_TARGET_LIB=${GO_TARGET_LIB} \
 	BUILD_DIR=${BUILD_DIR} \
 	GOX_TAGS=${GOX_TAGS} \
+	LDFLAGS='${LDFLAGS}' \
 	./build_ios.sh
 
 ios-arm64:
@@ -102,6 +111,7 @@ ios-arm64:
 	GO_TARGET_LIB=${GO_TARGET_LIB} \
 	BUILD_DIR=${BUILD_DIR} \
 	GOX_TAGS=${GOX_TAGS} \
+	LDFLAGS='${LDFLAGS}' \
 	./build_ios.sh
 
 # Omitting 32 bit cpu archs as compilations failes for them
@@ -142,7 +152,7 @@ wasm:
 	GOOS=js \
 	GOARCH=wasm \
 	mkdir -p $(WEB_OUT)
-	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '-s -w' -o $(WEB_OUT)/${LIB_NAME}.wasm $(GO_TARGET_LIB_WEB)
+	go build -C ${GO_GNARKPROVER_DIR} ${GOX_TAGS} -trimpath -ldflags '${LDFLAGS}' -o $(WEB_OUT)/${LIB_NAME}.wasm $(GO_TARGET_LIB_WEB)
 	@# lib instead of misc in go 1.24
 	cp "$$(go env GOROOT)/misc/wasm/wasm_exec.js" "$(WEB_OUT)/wasm_exec.js"
 
