@@ -1,3 +1,8 @@
+## 1.6.0
+
+* Update asset links for v3 circuits
+* Add support for new circuits
+
 ## 1.5.1
 
 * Add tests for identifyAlgorithmFromZKOperationRequest

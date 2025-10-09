@@ -168,3 +168,6 @@ gen_bindings:
 	rm -f ${BUILD_DIR}/${LIB_NAME}.*
 	go build -C ${GO_GNARKPROVER_DIR} -trimpath -buildmode=c-archive -o ${BUILD_DIR}/${LIB_NAME}.o ${GO_TARGET_LIB}
 	cd ${PROJECT_DIR} && dart run ffigen --config ffigen.yaml
+
+size:
+	stat -f "%N: %z bytes (%.2m MB)" android/src/main/jniLibs/arm64-v8a/libgnarkprover.so
