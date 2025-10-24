@@ -1,3 +1,7 @@
+## 1.6.1
+
+* Remove unnecessary logs
+
 ## 1.6.0
 
 * Update asset links for v3 circuits
