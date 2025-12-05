@@ -1,4 +1,8 @@
-# reclaim_gnark_zkoperator
+# Repository Archived
+
+**NOTE 2025-12-05**: Work on this package has been discontinued. We have now directed efforts to actively maintain [Reclaim TEE+MPC protocol operator](https://github.com/reclaimprotocol/reclaim-tee-operator-flutter) for request verification & attestation. We recommend you to migrate your app to now use [Reclaim TEE+MPC protocol operator](https://github.com/reclaimprotocol/reclaim-tee-operator-flutter).
+
+# reclaim_gnark_zkoperator (discontinued)
 
 Reclaim Protocol's implementation of Zero-Knowledge (ZK) SNARK Operator powered by a Gnark Prover library for creating ZK-SNARK Proofs on Flutter.
 
